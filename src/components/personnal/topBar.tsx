@@ -3,6 +3,8 @@
 import { Card } from "../ui/card";
 import {
   Bell,
+  Building2,
+  Home,
   House,
   LogOut,
   LucideIcon,
@@ -67,23 +69,24 @@ const TopBar = () => {
 
   const iconActive = isActive("/home") ? IconHomeFilled : IconHome;
   const navItems: NavItem[] = [
-    { id: 0, name: "Accueil", icon: iconActive, route: "/home" },
-    { id: 1, name: "Organisations", icon: Users, route: "/organizations" },
+    { id: 0, name: "Accueil", icon: Home, route: "/home" },
+    { id: 1, name: "Organisations", icon: Building2, route: "/organizations" },
+    { id: 2, name: "Groupes", icon: Users, route: "/groups" },
     {
-      id: 2,
+      id: 3,
       name: "Discussions",
       icon: MessageCircle,
       route: "/messages",
       badge: 4,
     },
     {
-      id: 3,
+      id: 4,
       name: "Notifications",
       icon: Bell,
       route: "/notifications",
       badge: 3,
     },{
-      id: 4,
+      id: 5,
       name: "Profile",
       icon: User,
       route: `/profil/${currentUser?.username}`,
@@ -135,7 +138,7 @@ const TopBar = () => {
               >
                 <div className="relative">
                   <item.icon
-                    className={`size-5 ${active ? "fill-black dark:fill-white" : ""}`}
+                    className={`size-5 ${active ? "text-primary" : ""}`}
                     strokeWidth={active ? 2.5 : 2}
                   />
                   {/* {item.badge && item.badge > 0 && (
@@ -146,7 +149,7 @@ const TopBar = () => {
                 </div>
                 <span
                   className={`text-[10px] mt-0.5 leading-none ${
-                    active ? "font-bold" : "font-medium"
+                    active ? "font-bold text-primary" : "font-medium"
                   }`}
                 >
                   {item.name}

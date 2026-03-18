@@ -28,7 +28,7 @@ async function PostsSection({
   orgId: string;
   orgName: string;
 }) {
-  const data = await fetchInitialPosts(orgId);
+  const data = await fetchInitialPosts({ orgId });
 
   return (
     <>
@@ -36,8 +36,9 @@ async function PostsSection({
         firstPost={data.posts}
         initialCursor={data.nextCursor}
         initialHasMore={data.hasMore}
-        orgId={orgId}
-        orgName={orgName}
+        roomType="org"
+        roomId={orgId}
+        roomName={orgName}
       />
     </>
   );

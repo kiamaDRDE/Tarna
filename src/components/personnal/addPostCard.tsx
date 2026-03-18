@@ -80,10 +80,14 @@ const AddPostCard = ({
   isgroup,
   orgId,
   orgName,
+  groupId,
+  groupName,
 }: {
   isgroup: boolean;
   orgId?: string;
   orgName?: string;
+  groupId?: string;
+  groupName?: string;
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [content, setContent] = useState("");
@@ -103,7 +107,9 @@ const AddPostCard = ({
   const [isOrg, setIsOrg] = useState(isgroup);
   const [myRole, setMyRole] = useState<OrgRole | null>(null);
   const [myOrgs, setMyOrgs] = useState<OrganizationResponse[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(isgroup ? orgId || "" : null);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
+    isgroup && orgId ? orgId : null,
+  );
 
   useEffect(() => {
     if (!isgroup || !orgId) return;
@@ -139,6 +145,7 @@ const AddPostCard = ({
     { value: "private", label: "Privé", icon: GlobeLock },
     // { value: "friends", label: "Amis", icon: Users },
   ];
+  const labelForGroup = groupName ?? orgName;
   const visibilityGroupOptions: VisibilityOption[] = [
     ...(myRole === "owner" || myRole === "admin" || myRole === "manager"
       ? [{ value: "public", label: "Public", icon: Globe }]
@@ -146,7 +153,7 @@ const AddPostCard = ({
 
     {
       value: "group_only",
-      label: isOrg && orgName ? orgName : "Privé",
+      label: isOrg && labelForGroup ? labelForGroup : "Privé",
       icon: GlobeLock,
     },
   ];
@@ -169,7 +176,7 @@ const AddPostCard = ({
   const currentVisibilityOption =
     visibility === "group_only"
       ? {
-          label: selectedOrgName || orgName || "Organisation",
+          label: selectedOrgName || labelForGroup || "Organisation",
           icon: Building2,
         }
       : (() => {
@@ -177,7 +184,8 @@ const AddPostCard = ({
           return allOpts.find((o) => o.value === visibility) ?? allOpts[0];
         })();
   
-  const effectiveOrgId = isgroup ? orgId : selectedOrgId ?? undefined;
+  const effectiveOrgId = isgroup && orgId ? orgId : selectedOrgId ?? undefined;
+  const effectiveGroupId = isgroup && groupId ? groupId : undefined;
 
   const handleFormAction = async (
     prevState: CreatePostState,
@@ -188,6 +196,7 @@ const AddPostCard = ({
       formData,
       visibility === "group_only" || isOrg,
       effectiveOrgId,
+      effectiveGroupId,
     );
     console.log(result)
     if (result.success) {
@@ -534,7 +543,7 @@ const AddPostCard = ({
               disabled={
                 !hasContent ||
                 isPending ||
-                (visibility === "group_only" && !selectedOrgId)
+                (visibility === "group_only" && !selectedOrgId && !groupId)
               }
             >
               {isPending ? (

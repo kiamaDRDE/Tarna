@@ -373,7 +373,8 @@ const FeedItem = ({
     const addDelta = optimisticReaction === type ? 1 : 0;
     return Math.max(0, safeCount + removeDelta + addDelta);
   }
-  const isOrgPost = Boolean(post.groupId || post.organization?.id);
+  const isOrgPost = Boolean(post.orgId || post.organization?.id);
+  const isGroupPost = Boolean(post.groupId);
   const orgDisplayName = post.organization?.name || "Organisation";
   const orgInitials = getInitials(orgDisplayName);
   
@@ -383,7 +384,7 @@ const FeedItem = ({
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         {/* ─── Header ─── */}
         <CardHeader className="flex flex-row items-start justify-between pb-2">
-         <Link href={isOrgPost ? `/organizations/${post.organization?.id}` : `/profil/${post.author.username}`}>
+         <Link href={isOrgPost ? `/organizations/${post.organization?.id}` : isGroupPost ? `/groups/${post.groupId}` : `/profil/${post.author.username}`}>
           <div className="flex flex-row items-center gap-3">
             <Avatar className="size-10">
               <AvatarImage
@@ -412,9 +413,17 @@ const FeedItem = ({
                 {!isgroup && isOrgPost && (
                   <Badge
                     variant={"outline"}
-                    className="text-[9px] bg-primary/10"
+                    className="text-[9px] bg-primary/10 text-primary"
                   >
                     {"Organisation"}
+                  </Badge>
+                )}
+                {!isgroup && isGroupPost && (
+                  <Badge
+                    variant={"outline"}
+                    className="text-[9px] bg-primary/10 text-primary"
+                  >
+                    {"Groupe"}
                   </Badge>
                 )}
               </div>

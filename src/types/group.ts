@@ -1,23 +1,104 @@
 export type GroupVisibility = "public" | "private" | "secret";
+export type GroupStatus = "active" | "archived";
+export type GroupRole = "owner" | "admin" | "moderator" | "member";
+export type GroupMembershipStatus = "pending" | "accepted" | "banned";
 
+/**
+ * Shape renvoyée par GET /groups, /groups/mine, /groups/discover.
+ * Correspond au select `groupPreview` du backend.
+ */
+export type GroupResponse = {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  visibility: GroupVisibility;
+  status: GroupStatus;
+  orgId: string | null;
+  createdAt: string;
+  _count: {
+    memberships: number;
+  };
+  /** Présent uniquement dans /groups/mine */
+  currentUserRole?: GroupRole | null;
+};
+
+export type DetailedGroupResponse = {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  visibility: GroupVisibility;
+  status: GroupStatus;
+  orgId: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
+  organization: {
+    id: string;
+    name: string;
+    logoUrl: string | null;
+  } | null;
+  _count: {
+    memberships: number;
+  };
+  currentUserRole?: GroupRole | null;
+};
+
+/** Réponse paginée commune */
+export type PaginatedGroupResponse = {
+  data: GroupResponse[];
+  meta: {
+    limit: number;
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+};
+
+/** Shape d'un membre retourné par GET /groups/:groupId/members */
+export type GroupMember = {
+  id: string;
+  role: GroupRole;
+  status: GroupMembershipStatus;
+  joinedAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    bio: string | null;
+  };
+};
+
+export type PaginatedGroupMembersResponse = {
+  data: GroupMember[];
+  meta: {
+    limit: number;
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+};
+
+/** @deprecated — ancienne shape mock, utiliser GroupResponse */
 export type Group = {
   id: number;
   name: string;
   description: string;
-  /** URL de la bannière du groupe */
   banner: string;
-  /** URL de l'avatar du groupe */
   avatar: string;
   initials: string;
   visibility: GroupVisibility;
   membersCount: number;
   postsCount: number;
-  /** L'utilisateur courant est-il membre ? */
   isMember: boolean;
-  /** Demande en attente (pour les groupes privés) */
   isPending: boolean;
-  /** Catégorie / tag du groupe */
   category: string;
-  /** Dernière activité lisible */
   lastActivity: string;
 };

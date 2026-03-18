@@ -3,7 +3,10 @@ import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import {
   Bell,
+  Building,
+  Building2,
   ChevronRight,
+  Home,
   House,
   LucideIcon,
   MessageCircle,
@@ -11,12 +14,15 @@ import {
   ShieldUser,
   User,
   Users,
+  UsersRound,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { groupsData } from "@/src/data/groups";
 import { useUserStore } from "@/src/store/userStore";
+import { useGroupStore } from "@/src/store/groupStore";
+import { getAvatarFallbackColor } from "@/src/lib/avatarColor";
+import { getInitials } from "@/src/lib/getInitials";
 import { IconHome, IconHomeFilled } from "@tabler/icons-react";
 
 type menuItemType = {
@@ -27,19 +33,19 @@ type menuItemType = {
   badge?: number;
 };
 
-const myGroups = groupsData.filter((g) => g.isMember).slice(0, 4);
-
 const Sidebar = () => {
   const pathname = usePathname();
   const user = useUserStore((s) => s.user);
+  const myGroups = useGroupStore((s) => s.tabs["my-groups"].data).slice(0, 4);
 
   const isActive = (prefix: string) =>
     pathname === prefix || pathname.startsWith(prefix + "/");
   const iconActive = isActive("/home") ? IconHomeFilled : IconHome;
 
   const initialMenu: menuItemType[] = [
-    { id: 0, name: "Accueil", icon: iconActive, route: "/home" },
-    { id: 1, name: "Organisations", icon: Users, route: "/organizations" },
+    { id: 0, name: "Accueil", icon: Home, route: "/home" },
+    { id: 1, name: "Organisations", icon: Building2, route: "/organizations" },
+    { id: 6, name: "Groupes", icon: UsersRound, route: "/groups" },
     {
       id: 2,
       name: "Discussions",
@@ -100,11 +106,11 @@ const Sidebar = () => {
                 }`}
               >
                 <item.icon
-                  className={`size-4.5 mr-1 ${active ? "fill-black dark:fill-white" : ""}`}
+                  className={`size-4.5 mr-1 ${active ? "text-primary" : ""}`}
                   strokeWidth={active ? 2.5 : 2}
                 />
                 <span
-                  className={`flex-1 text-left text-sm ${active ? "font-bold" : "font-medium"}`}
+                  className={`flex-1 text-left text-sm ${active ? "font-bold text-primary" : "font-medium"}`}
                 >
                   {item.name}
                 </span>
@@ -129,32 +135,36 @@ const Sidebar = () => {
       <div className="mx-4 my-3 h-px bg-border" />
 
       {/* ─── Mes groupes ─── */}
-      {/* <div className="flex flex-col gap-1 px-2">
-        <div className="flex flex-row items-center justify-between px-3 mb-1">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Mes groupes
-          </p>
-          <Link
-            href="/groups"
-            className="text-[11px] text-muted-foreground hover:text-primary transition-colors"
-          >
-            Voir tout
-          </Link>
-        </div>
+      {myGroups.length > 0 && (
+        <div className="flex flex-col gap-1 px-2">
+          <div className="flex flex-row items-center justify-between px-3 mb-1">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Mes groupes
+            </p>
+            <Link
+              href="/groups"
+              className="text-[11px] text-muted-foreground hover:text-primary transition-colors"
+            >
+              Voir tout
+            </Link>
+          </div>
 
-        {myGroups.map((group) => {
-          return (
+          {myGroups.map((group) => (
             <Button
               asChild
               variant="ghost"
               key={group.id}
               className="justify-start cursor-pointer h-9 px-3 hover:bg-accent group"
             >
-              <Link href="/groups/detail">
+              <Link href={`/groups/${group.id}`}>
                 <Avatar className="size-6 rounded-md shrink-0">
-                  <AvatarImage src={group.avatar} alt={group.name} />
-                  <AvatarFallback className="rounded-md text-[9px] font-bold">
-                    {group.initials}
+                  {group.imageUrl && (
+                    <AvatarImage src={group.imageUrl} alt={group.name} />
+                  )}
+                  <AvatarFallback
+                    className={`rounded-md text-[9px] font-bold ${getAvatarFallbackColor(group.name)}`}
+                  >
+                    {getInitials(group.name)}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium truncate flex-1">
@@ -167,9 +177,9 @@ const Sidebar = () => {
                 )}
               </Link>
             </Button>
-          );
-        })}
-      </div> */}
+          ))}
+        </div>
+      )}
 
       {/* ─── Séparateur ─── */}
       {/* <div className="mx-4 my-3 h-px bg-border" /> */}

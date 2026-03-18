@@ -15,20 +15,24 @@ import { toast } from "sonner";
 
 type FeedFilter = "for-you" | "recent";
 
+type RoomType = "org" | "group";
+
 type NewFeedProps = {
   firstPost: Post[];
   initialCursor: string | null;
   initialHasMore: boolean;
-  orgId: string;
-  orgName: string;
+  roomType: RoomType;
+  roomId: string;
+  roomName: string;
 };
 
 const NewOrgFeed = ({
   firstPost,
   initialCursor,
   initialHasMore,
-  orgId,
-  orgName,
+  roomType,
+  roomId,
+  roomName,
 }: NewFeedProps) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<FeedFilter>("for-you");
@@ -39,11 +43,11 @@ const NewOrgFeed = ({
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
   const socket = useSocket();
 
-  // ── Rejoindre la room org:<orgId> au montage ──
+  // ── Rejoindre la room scope:<id> au montage ──
   useEffect(() => {
     if (!socket) return;
-    socket.emit("org:subscribe", [orgId]);
-  }, [socket, orgId]);
+    socket.emit(`${roomType}:subscribe`, [roomId]);
+  }, [socket, roomType, roomId]);
 
   // ── Feed store ──
   const feedPosts = useOrgPostStore((s) => s.posts);
@@ -52,8 +56,8 @@ const NewOrgFeed = ({
   const appendPosts = useOrgPostStore((s) => s.appendPosts);
   const hasMore = useOrgPostStore((s) => s.hasMore);
 
-  // ── Écouter org:post:new — accumuler les posts reçus ──
-  const handleNewOrgPost = useCallback((raw: unknown) => {
+  // ── Écouter <scope>:post:new — accumuler les posts reçus ──
+  const handleNewScopedPost = useCallback((raw: unknown) => {
     const post = mapRawPost(raw);
     setPendingPosts((prev) => {
       if (prev.some((p) => p.id === post.id)) return prev;
@@ -61,7 +65,7 @@ const NewOrgFeed = ({
     });
   }, []);
 
-  useSocketEvent("org:post:new", handleNewOrgPost);
+  useSocketEvent(`${roomType}:post:new`, handleNewScopedPost);
 
   // ── Toast quand de nouveaux posts arrivent ──
   useEffect(() => {
@@ -110,7 +114,10 @@ const NewOrgFeed = ({
     loadingRef.current = true;
     setIsLoadingMore(true);
     try {
-      const result = await fetchMorePosts(cursor, token, orgId);
+      const result = await fetchMorePosts(cursor, token, {
+        orgId: roomType === "org" ? roomId : undefined,
+        groupId: roomType === "group" ? roomId : undefined,
+      });
 
       if (result.posts.length > 0) {
         appendPosts(result.posts, result.nextCursor, result.hasMore);
@@ -214,7 +221,7 @@ const NewOrgFeed = ({
       ) : (
         <div className="flex flex-col gap-3">
           {posts.map((post) => (
-            <FeedItem key={post.id} post={post} isgroup groupName={orgName} />
+            <FeedItem key={post.id} post={post} isgroup groupName={roomName} />
           ))}
 
           {/* Sentinelle infinite scroll + spinner + fallback bouton */}
