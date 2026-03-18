@@ -179,7 +179,7 @@ export default function GroupSettingsDrawer({ group }: Props) {
     }
     const timeout = setTimeout(async () => {
       setSearching(true);
-      const users = await searchUsers(searchQuery);
+      const users = await searchUsers(searchQuery, group.orgId ?? undefined);
       const memberIds = new Set(members.map((m) => m.user.id));
       setSearchResults(users.filter((u) => !memberIds.has(u.id)));
       setSearching(false);

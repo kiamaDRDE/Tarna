@@ -228,9 +228,11 @@ export async function fetchDetailGroup(
 
 // ── Recherche d'utilisateurs ─────────────────────────────────
 
-/** Recherche des utilisateurs par nom/username (pour l'ajout de membres). */
+/** Recherche des utilisateurs par nom/username (pour l'ajout de membres).
+ *  Si orgId est fourni, ne retourne que les membres de cette organisation. */
 export async function searchUsers(
   query: string,
+  orgId?: string,
 ): Promise<UserSearchResult[]> {
   const token = await getToken();
   if (!token) return [];
@@ -242,6 +244,7 @@ export async function searchUsers(
     const url = new URL(`${API_BASE_URL}/users`);
     url.searchParams.set("search", trimmed);
     url.searchParams.set("limit", "10");
+    if (orgId) url.searchParams.set("orgId", orgId);
 
     const res = await fetch(url.toString(), {
       headers: {

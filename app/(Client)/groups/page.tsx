@@ -124,6 +124,7 @@ const GroupsPage = () => {
     [],
   );
   const [searchingMembers, setSearchingMembers] = useState(false);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | undefined>(undefined);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data fetchers ──────────────────────────────────────────
@@ -181,7 +182,7 @@ const GroupsPage = () => {
       setSearchingMembers(true);
       debounceRef.current = setTimeout(async () => {
         try {
-          const results = await searchUsers(value);
+          const results = await searchUsers(value, selectedOrgId);
           const selectedIds = new Set(selectedMembers.map((m) => m.id));
           setMemberResults(results.filter((u) => !selectedIds.has(u.id)));
         } catch {
@@ -191,7 +192,7 @@ const GroupsPage = () => {
         }
       }, 350);
     },
-    [selectedMembers],
+    [selectedMembers, selectedOrgId],
   );
 
   const addMember = useCallback(
@@ -272,6 +273,7 @@ const GroupsPage = () => {
         setSelectedMembers([]);
         setMemberSearch("");
         setMemberResults([]);
+        setSelectedOrgId(undefined);
         setDialogOpen(false);
         toast.success("Groupe créé avec succès !");
       } catch {
@@ -411,7 +413,17 @@ const GroupsPage = () => {
                     {/* Organisation (optionnel) */}
                     <div className="flex flex-col gap-1.5">
                       <Label>Organisation (optionnel)</Label>
-                      <Select name="orgId">
+                      <Select
+                        name="orgId"
+                        value={selectedOrgId ?? ""}
+                        onValueChange={(v) => {
+                          setSelectedOrgId(v || undefined);
+                          // Réinitialiser la recherche de membres quand l'org change
+                          setSelectedMembers([]);
+                          setMemberSearch("");
+                          setMemberResults([]);
+                        }}
+                      >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Aucune" />
                         </SelectTrigger>
@@ -447,8 +459,9 @@ const GroupsPage = () => {
                       Ajouter des membres
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Recherchez des utilisateurs à inviter directement comme
-                      membres.
+                      {selectedOrgId
+                        ? "Recherchez parmi les membres de l'organisation sélectionnée."
+                        : "Recherchez des utilisateurs à inviter directement comme membres."}
                     </p>
 
                     {/* Chips des membres sélectionnés */}
