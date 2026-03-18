@@ -86,6 +86,29 @@ export type PaginatedGroupMembersResponse = {
   };
 };
 
+/** Shape d'une demande d'adhésion à un groupe */
+export type GroupJoinRequest = {
+  id: string;
+  status: string;
+  joinedAt: string;
+  user: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    bio: string | null;
+  };
+};
+
+export type PaginatedGroupJoinRequestsResponse = {
+  data: GroupJoinRequest[];
+  meta: {
+    limit: number;
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+};
+
 /** @deprecated — ancienne shape mock, utiliser GroupResponse */
 export type Group = {
   id: number;

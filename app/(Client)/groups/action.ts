@@ -3,6 +3,8 @@ import type {
   DetailedGroupResponse,
   GroupResponse,
   GroupRole,
+  GroupVisibility,
+  PaginatedGroupJoinRequestsResponse,
   PaginatedGroupMembersResponse,
   PaginatedGroupResponse,
 } from "@/src/types/group";
@@ -391,5 +393,133 @@ export async function updateGroupMemberRole(
     return { success: true, error: null };
   } catch {
     return { success: false, error: "Échec de la mise à jour." };
+  }
+}
+
+// ── Join requests ────────────────────────────────────────────
+
+/** Liste paginée des demandes d'adhésion en attente. */
+export async function fetchGroupJoinRequests(
+  groupId: string,
+  cursor?: string | null,
+): Promise<PaginatedGroupJoinRequestsResponse> {
+  const token = await getToken();
+  const empty: PaginatedGroupJoinRequestsResponse = {
+    data: [],
+    meta: { limit: 20, nextCursor: null, hasMore: false },
+  };
+  if (!token) return empty;
+
+  try {
+    const url = new URL(
+      `${API_BASE_URL}/groups/${groupId}/join-requests`,
+    );
+    if (cursor) url.searchParams.set("cursor", cursor);
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return empty;
+    return (await res.json()) as PaginatedGroupJoinRequestsResponse;
+  } catch {
+    return empty;
+  }
+}
+
+/** Accepter ou rejeter une demande d'adhésion. */
+export async function handleGroupJoinRequest(
+  groupId: string,
+  requestId: string,
+  decision: "accepted" | "rejected",
+): Promise<JoinRequestResult> {
+  const token = await getToken();
+  if (!token) return { success: false, error: "Non authentifié." };
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/groups/${groupId}/join-requests/${requestId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ decision }),
+      },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return {
+        success: false,
+        error: data?.message ?? `Erreur (${res.status})`,
+      };
+    }
+    return { success: true, error: null };
+  } catch {
+    return { success: false, error: "Échec du traitement." };
+  }
+}
+
+// ── Update / Archive ─────────────────────────────────────────
+
+export type UpdateGroupInput = {
+  name?: string;
+  description?: string;
+  visibility?: GroupVisibility;
+};
+
+/** Mettre à jour les infos d'un groupe. */
+export async function updateGroup(
+  groupId: string,
+  input: UpdateGroupInput,
+): Promise<JoinRequestResult> {
+  const token = await getToken();
+  if (!token) return { success: false, error: "Non authentifié." };
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return {
+        success: false,
+        error: data?.message ?? `Erreur (${res.status})`,
+      };
+    }
+    return { success: true, error: null };
+  } catch {
+    return { success: false, error: "Échec de la mise à jour." };
+  }
+}
+
+/** Archiver un groupe (owner uniquement). */
+export async function archiveGroup(
+  groupId: string,
+): Promise<JoinRequestResult> {
+  const token = await getToken();
+  if (!token) return { success: false, error: "Non authentifié." };
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/groups/${groupId}/archive`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return {
+        success: false,
+        error: data?.message ?? `Erreur (${res.status})`,
+      };
+    }
+    return { success: true, error: null };
+  } catch {
+    return { success: false, error: "Échec de l'archivage." };
   }
 }

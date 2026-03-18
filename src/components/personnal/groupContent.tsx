@@ -12,6 +12,14 @@ import { fetchInitialPosts } from "@/app/(Client)/home/actions";
 import { Suspense } from "react";
 import { Spinner } from "../ui/spinner";
 import NewOrgFeed from "./orgFeed";
+import GroupSettingsDrawer from "./groupSettingsDrawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerTrigger,
+} from "../ui/drawer";
+import { Button } from "../ui/button";
 
 const visibilityConfig: Record<
   string,
@@ -101,6 +109,27 @@ const GroupContent = ({
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="pr-5">
+              {isMember && group && (
+                <Drawer direction="right">
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 cursor-pointer rounded-full"
+                    >
+                      <Settings className="size-3.5" />
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerTitle className="sr-only">
+                      {"Paramètres du groupe"}
+                    </DrawerTitle>
+                    <GroupSettingsDrawer group={group} />
+                  </DrawerContent>
+                </Drawer>
+              )}
             </div>
           </div>
           <div className="px-4 py-3">
