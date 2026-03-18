@@ -9,14 +9,8 @@ import {
   Globe,
   Lock,
   EyeOff,
+  ArrowRight,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import Link from "next/link";
@@ -32,25 +26,25 @@ const roleConfig: Record<
     icon: Crown,
     label: "Owner",
     color:
-      "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400",
+      "text-amber-600 dark:text-amber-400",
   },
   admin: {
     icon: ShieldCheck,
     label: "Admin",
     color:
-      "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400",
+      "text-blue-600 dark:text-blue-400",
   },
   moderator: {
     icon: Shield,
     label: "Modérateur",
     color:
-      "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400",
+      "text-purple-600 dark:text-purple-400",
   },
   member: {
     icon: UserCheck,
     label: "Membre",
     color:
-      "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400",
+      "text-emerald-600 dark:text-emerald-400",
   },
 };
 
@@ -95,122 +89,107 @@ const GroupCard = ({
   const vis = visibilityConfig[group.visibility] ?? visibilityConfig.public;
   const VisIcon = vis.icon;
 
-  return (
-    <Card className="overflow-hidden rounded-xl border shadow-sm hover:shadow-md transition-shadow py-0 gap-0">
-      {/* Banner + Avatar wrapper */}
-      <div className="relative">
-        {/* Banner — gradient since groups don't have a banner URL */}
-        <div className="relative h-24 overflow-hidden">
-          <div className="absolute inset-0 bg-linear-to-br from-primary/30 to-primary/10" />
-          <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+  const content = (
+    <div className="flex items-center gap-3.5 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors group/card">
+      {/* Avatar */}
+      <Avatar className="size-11 shrink-0 rounded-xl">
+        {group.imageUrl && (
+          <AvatarImage src={group.imageUrl} alt={group.name} />
+        )}
+        <AvatarFallback
+          className={`rounded-xl text-sm font-bold ${getAvatarFallbackColor(group.name)}`}
+        >
+          {initials}
+        </AvatarFallback>
+      </Avatar>
 
-          {/* Role badge */}
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold truncate">{group.name}</p>
           {role && RoleIcon && (
-            <div className="absolute top-2 right-2">
-              <Badge
-                variant="secondary"
-                className={`text-[10px] gap-1 ${role.color}`}
-              >
-                <RoleIcon className="size-2.5" />
-                {role.label}
-              </Badge>
-            </div>
+            <RoleIcon className={`size-3.5 shrink-0 ${role.color}`} />
           )}
-
-          {/* Visibility badge */}
-          <div className="absolute bottom-2 left-2">
-            <Badge
-              variant="secondary"
-              className="text-[10px] bg-white/90 text-gray-700 dark:bg-black/60 dark:text-gray-300"
-            >
-              <VisIcon className="size-2.5 mr-0.5" />
-              {vis.label}
-            </Badge>
-          </div>
         </div>
-
-        {/* Avatar overlay */}
-        <div className="absolute -bottom-6 right-3 z-10">
-          <Avatar className="size-12 border-2 border-background shadow-md rounded-lg">
-            {group.imageUrl && (
-              <AvatarImage src={group.imageUrl} alt={group.name} />
-            )}
-            <AvatarFallback
-              className={`rounded-lg text-sm font-bold ${getAvatarFallbackColor(group.name)}`}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      </div>
-
-      {/* Content */}
-      <CardHeader className="pt-6 pb-1 px-3 gap-0">
-        <CardTitle className="text-base font-semibold leading-tight truncate flex items-center gap-1.5">
-          <Users className="size-3.5 text-muted-foreground shrink-0" />
-          {group.name}
-        </CardTitle>
         {group.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
             {group.description}
           </p>
         )}
-      </CardHeader>
-
-      <CardContent className="px-3 pb-2 pt-1">
-        <div className="flex flex-row items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
+        <div className="flex items-center gap-2.5 mt-1">
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Users className="size-3" />
-            {group._count.memberships.toLocaleString()} membres
+            {group._count.memberships.toLocaleString()}
           </span>
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <VisIcon className="size-3" />
+            {vis.label}
+          </span>
+          {"organization" in group &&
+            (group as { organization?: { name: string } | null }).organization != null && (
+            <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-normal">
+              {(group as { organization: { name: string } }).organization.name}
+            </Badge>
+          )}
         </div>
-      </CardContent>
+      </div>
 
-      {/* Footer */}
-      <CardFooter className="px-3 pb-3 pt-0">
+      {/* Action */}
+      <div className="shrink-0">
         {variant === "mine" ? (
-          <Button
-            asChild
-            className="w-full cursor-pointer"
-            variant="outline"
-            size="sm"
-          >
-            <Link href={`/groups/${group.id}`}>
-              <Users className="size-3.5 mr-1.5" />
-              Accéder
-            </Link>
-          </Button>
+          <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover/card:opacity-100 transition-opacity" />
         ) : variant === "pending" ? (
           <Button
             variant="ghost"
             size="sm"
-            className="w-full cursor-pointer text-amber-600 hover:text-amber-700"
+            className="cursor-pointer text-amber-600 hover:text-amber-700 text-xs h-7 px-2"
             disabled={actionLoading}
-            onClick={() => onCancel?.(group.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCancel?.(group.id);
+            }}
           >
             {actionLoading ? (
-              <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+              <Loader2 className="size-3 animate-spin" />
             ) : (
-              <Clock className="size-3.5 mr-1.5" />
+              <>
+                <Clock className="size-3 mr-1" />
+                Annuler
+              </>
             )}
-            En attente — Annuler
           </Button>
         ) : (
           <Button
             size="sm"
-            className="w-full cursor-pointer"
+            className="cursor-pointer text-xs h-7 px-3"
             disabled={actionLoading}
-            onClick={() => onJoin?.(group.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onJoin?.(group.id);
+            }}
           >
             {actionLoading ? (
-              <Loader2 className="size-3.5 mr-1.5 animate-spin" />
-            ) : null}
-            Rejoindre
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              "Rejoindre"
+            )}
           </Button>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
+
+  if (variant === "mine") {
+    return (
+      <Link href={`/groups/${group.id}`} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 };
 
 export default GroupCard;

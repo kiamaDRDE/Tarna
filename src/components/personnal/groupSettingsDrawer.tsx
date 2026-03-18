@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
   Check,
-  ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Crown,
   LogOut,
   Pencil,
@@ -15,11 +16,14 @@ import {
   UserPlus,
   Users,
   X,
+  Globe,
+  Lock,
+  EyeOff,
+  Settings2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Spinner } from "../ui/spinner";
 import { Textarea } from "../ui/textarea";
@@ -66,7 +70,7 @@ import {
 
 // ── Types ────────────────────────────────────────────────────
 
-type Tab = "main" | "edit" | "members" | "add-member" | "requests" | "danger";
+type View = "main" | "members-full" | "add-member" | "requests-full";
 
 type Props = {
   group: DetailedGroupResponse;
@@ -109,7 +113,10 @@ export default function GroupSettingsDrawer({ group }: Props) {
   const currentUser = useUserStore((s) => s.user);
   const myRole = group.currentUserRole ?? null;
 
-  const [tab, setTab] = useState<Tab>("main");
+  const [view, setView] = useState<View>("main");
+
+  // Collapsible sections
+  const [editOpen, setEditOpen] = useState(false);
 
   // Members
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -167,9 +174,14 @@ export default function GroupSettingsDrawer({ group }: Props) {
 
   // Load members/requests when switching tabs
   useEffect(() => {
-    if (tab === "members" && members.length === 0) loadMembers();
-    if (tab === "requests" && requests.length === 0) loadRequests();
-  }, [tab, members.length, requests.length, loadMembers, loadRequests]);
+    if (view === "members-full" && members.length === 0) loadMembers();
+    if (view === "requests-full" && requests.length === 0) loadRequests();
+  }, [view, members.length, requests.length, loadMembers, loadRequests]);
+
+  // Also load members preview for main view
+  useEffect(() => {
+    if (view === "main" && members.length === 0) loadMembers();
+  }, [view, members.length, loadMembers]);
 
   // Debounced search
   useEffect(() => {
@@ -195,7 +207,7 @@ export default function GroupSettingsDrawer({ group }: Props) {
     setSaving(false);
     if (res.success) {
       toast.success("Groupe mis à jour");
-      setTab("main");
+      setEditOpen(false);
     } else {
       toast.error(res.error ?? "Erreur");
     }
@@ -288,18 +300,18 @@ export default function GroupSettingsDrawer({ group }: Props) {
     }
   }, [group.id]);
 
-  // ── Tab header with back button ─────────────────────────
+  // ── Sub-view header with back button ─────────────────────
 
-  const TabHeader = ({
+  const ViewHeader = ({
     title,
     backTo = "main",
   }: {
     title: string;
-    backTo?: Tab;
+    backTo?: View;
   }) => (
     <div className="flex items-center gap-3 px-4 py-3 border-b">
       <button
-        onClick={() => setTab(backTo)}
+        onClick={() => setView(backTo)}
         className="p-1 rounded-full hover:bg-muted cursor-pointer"
       >
         <ArrowLeft className="size-5" />
@@ -310,521 +322,506 @@ export default function GroupSettingsDrawer({ group }: Props) {
 
   // ── Content via useMemo ─────────────────────────────────
 
-  const content = useMemo(() => {
-    // ── MAIN ────────────────────────────────────────────
-    if (tab === "main") {
-      return (
-        <div className="flex flex-col h-full">
-          {/* Group header */}
-          <div className="flex flex-col items-center py-6 gap-2">
-            <Avatar className="size-20">
-              <AvatarImage src={group.imageUrl ?? ""} alt={group.name} />
-              <AvatarFallback
-                className={`text-3xl font-bold ${getAvatarFallbackColor(group.name)}`}
-              >
-                {getInitials(group.name)}
-              </AvatarFallback>
-            </Avatar>
-            <h2 className="text-lg font-bold">{group.name}</h2>
-            <p className="text-xs text-muted-foreground">
-              Groupe · {group._count.memberships} membres
-            </p>
-          </div>
+  const visIcon = group.visibility === "public" ? Globe : group.visibility === "private" ? Lock : EyeOff;
+  const VisIcon = visIcon;
+  const visLabel = group.visibility === "public" ? "Public" : group.visibility === "private" ? "Privé" : "Secret";
+  const previewMembers = members.slice(0, 5);
 
-          <Separator />
+  // ── SUB VIEWS (full-screen overlays) ──────────────────
 
-          {/* Info */}
-          {group.description && (
-            <div className="px-4 py-3">
-              <p className="text-xs text-muted-foreground mb-1">Description</p>
-              <p className="text-sm">{group.description}</p>
+  // Members full view
+  if (view === "members-full") {
+    return (
+      <div className="flex flex-col h-full">
+        <ViewHeader title={`Membres (${members.length})`} />
+
+        {canManageMembers(myRole) && (
+          <button
+            onClick={() => setView("add-member")}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-accent text-left cursor-pointer border-b"
+          >
+            <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <UserPlus className="size-4 text-primary" />
+            </div>
+            <span className="text-sm font-medium text-primary">
+              Ajouter un membre
+            </span>
+          </button>
+        )}
+
+        <div className="flex-1 overflow-y-auto hide-scrollbar">
+          {members.map((member) => (
+            <MemberRow
+              key={member.id}
+              member={member}
+              myRole={myRole}
+              currentUserId={currentUser?.id ?? ""}
+              onRemove={handleRemoveMember}
+              onUpdateRole={handleUpdateRole}
+              loadingDelete={loadingDeleteUser}
+              loadingUpdateRole={loadingUpdateRole}
+            />
+          ))}
+
+          {loadingMembers && (
+            <div className="flex justify-center py-4">
+              <Spinner className="size-5" />
             </div>
           )}
 
-          <div className="px-4 py-2 flex flex-wrap gap-1.5">
-            <Badge variant="outline">{group.visibility}</Badge>
-            {group.organization && (
-              <Badge variant="secondary">{group.organization.name}</Badge>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Menu items */}
-          <div className="flex flex-col">
-            {canEditGroup(myRole) && (
-              <button
-                onClick={() => setTab("edit")}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-muted text-left cursor-pointer"
-              >
-                <Pencil className="size-4 text-muted-foreground" />
-                <span className="text-sm flex-1">
-                  Modifier les informations
-                </span>
-                <ChevronRight className="size-4 text-muted-foreground" />
-              </button>
-            )}
-
+          {membersHasMore && !loadingMembers && (
             <button
-              onClick={() => setTab("members")}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-muted text-left cursor-pointer"
+              onClick={() => loadMembers(membersCursor)}
+              className="w-full text-sm text-primary py-3 hover:bg-accent cursor-pointer"
             >
-              <Users className="size-4 text-muted-foreground" />
-              <span className="text-sm flex-1">
-                Membres ({members.length || group._count.memberships})
-              </span>
-              <ChevronRight className="size-4 text-muted-foreground" />
-            </button>
-
-            {canManageMembers(myRole) && (
-              <button
-                onClick={() => setTab("requests")}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-muted text-left cursor-pointer"
-              >
-                <UserPlus className="size-4 text-muted-foreground" />
-                <span className="text-sm flex-1">
-                  Demandes d&apos;adhésion
-                </span>
-                <ChevronRight className="size-4 text-muted-foreground" />
-              </button>
-            )}
-
-            <Separator />
-
-            <button
-              onClick={() => setTab("danger")}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-muted text-left cursor-pointer"
-            >
-              <LogOut className="size-4 text-red-500" />
-              <span className="text-sm text-red-500 flex-1">
-                Quitter / Supprimer
-              </span>
-              <ChevronRight className="size-4 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Creator */}
-          <div className="mt-auto px-4 py-3 border-t">
-            <p className="text-xs text-muted-foreground">
-              Créé par{" "}
-              <span className="font-medium text-foreground">
-                {group.creator.displayName ?? group.creator.username}
-              </span>{" "}
-              le{" "}
-              {new Date(group.createdAt).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    // ── EDIT ────────────────────────────────────────────
-    if (tab === "edit") {
-      return (
-        <div className="flex flex-col h-full">
-          <TabHeader title="Modifier le groupe" />
-          <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Nom
-              </label>
-              <Input
-                value={editForm.name ?? ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Description
-              </label>
-              <Textarea
-                value={editForm.description ?? ""}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                Visibilité
-              </label>
-              <Select
-                value={editForm.visibility ?? "public"}
-                onValueChange={(v) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    visibility: v as "public" | "private" | "secret",
-                  }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">Public</SelectItem>
-                  <SelectItem value="private">Privé</SelectItem>
-                  <SelectItem value="secret">Secret</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="p-4 border-t">
-            <Button
-              className="w-full cursor-pointer"
-              onClick={handleSaveEdit}
-              disabled={saving}
-            >
-              {saving ? <Spinner className="size-4" /> : "Enregistrer"}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    // ── MEMBERS ─────────────────────────────────────────
-    if (tab === "members") {
-      return (
-        <div className="flex flex-col h-full">
-          <TabHeader title={`Membres (${members.length})`} />
-
-          {/* Add member button */}
-          {canManageMembers(myRole) && (
-            <button
-              onClick={() => setTab("add-member")}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-muted text-left cursor-pointer border-b"
-            >
-              <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <UserPlus className="size-4 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-primary">
-                Ajouter un membre
-              </span>
+              Charger plus
             </button>
           )}
+        </div>
+      </div>
+    );
+  }
 
-          {/* Member list */}
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            {members.map((member) => (
-              <MemberRow
-                key={member.id}
-                member={member}
-                myRole={myRole}
-                currentUserId={currentUser?.id ?? ""}
-                onRemove={handleRemoveMember}
-                onUpdateRole={handleUpdateRole}
-                loadingDelete={loadingDeleteUser}
-                loadingUpdateRole={loadingUpdateRole}
-              />
-            ))}
+  // Add member view
+  if (view === "add-member") {
+    return (
+      <div className="flex flex-col h-full">
+        <ViewHeader title="Ajouter un membre" backTo="members-full" />
 
-            {loadingMembers && (
-              <div className="flex justify-center py-4">
-                <Spinner className="size-5" />
-              </div>
-            )}
-
-            {membersHasMore && !loadingMembers && (
-              <button
-                onClick={() => loadMembers(membersCursor)}
-                className="w-full text-sm text-primary py-3 hover:bg-muted cursor-pointer"
-              >
-                Charger plus
-              </button>
-            )}
+        <div className="px-4 py-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Rechercher un utilisateur..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
           </div>
         </div>
-      );
-    }
 
-    // ── ADD MEMBER ──────────────────────────────────────
-    if (tab === "add-member") {
-      return (
-        <div className="flex flex-col h-full">
-          <TabHeader title="Ajouter un membre" backTo="members" />
-
-          <div className="px-4 py-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Rechercher un utilisateur..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-              />
+        <div className="flex-1 overflow-y-auto hide-scrollbar">
+          {searching && (
+            <div className="flex justify-center py-4">
+              <Spinner className="size-5" />
             </div>
-          </div>
+          )}
 
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            {searching && (
-              <div className="flex justify-center py-4">
-                <Spinner className="size-5" />
-              </div>
-            )}
-
-            {!searching &&
-              searchResults.length === 0 &&
-              searchQuery.length >= 2 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucun utilisateur trouvé
-                </p>
-              )}
-
-            {searchResults.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted"
-              >
-                <Avatar className="size-9">
-                  <AvatarImage src={user.avatarUrl ?? ""} />
-                  <AvatarFallback
-                    className={`text-xs font-bold ${getAvatarFallbackColor(user.displayName ?? user.username)}`}
-                  >
-                    {getInitials(user.displayName ?? user.username)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {user.displayName ?? user.username}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    @{user.username}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="cursor-pointer"
-                  disabled={addingUserId === user.id}
-                  onClick={() => handleAddMember(user.id)}
-                >
-                  {addingUserId === user.id ? (
-                    <Spinner className="size-3" />
-                  ) : (
-                    <UserPlus className="size-3.5" />
-                  )}
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // ── REQUESTS ────────────────────────────────────────
-    if (tab === "requests") {
-      return (
-        <div className="flex flex-col h-full">
-          <TabHeader title="Demandes d'adhésion" />
-
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            {requests.length === 0 && !loadingRequests && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Aucune demande en attente
+          {!searching &&
+            searchResults.length === 0 &&
+            searchQuery.length >= 2 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Aucun utilisateur trouvé
               </p>
             )}
 
-            {requests.map((req) => (
-              <div
-                key={req.id}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-muted"
+          {searchResults.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent"
+            >
+              <Avatar className="size-9">
+                <AvatarImage src={user.avatarUrl ?? ""} />
+                <AvatarFallback
+                  className={`text-xs font-bold ${getAvatarFallbackColor(user.displayName ?? user.username)}`}
+                >
+                  {getInitials(user.displayName ?? user.username)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user.displayName ?? user.username}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  @{user.username}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer"
+                disabled={addingUserId === user.id}
+                onClick={() => handleAddMember(user.id)}
               >
-                <Avatar className="size-9">
-                  <AvatarImage src={req.user.avatarUrl ?? ""} />
+                {addingUserId === user.id ? (
+                  <Spinner className="size-3" />
+                ) : (
+                  <UserPlus className="size-3.5" />
+                )}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Requests full view
+  if (view === "requests-full") {
+    return (
+      <div className="flex flex-col h-full">
+        <ViewHeader title="Demandes d'adhésion" />
+
+        <div className="flex-1 overflow-y-auto hide-scrollbar">
+          {requests.length === 0 && !loadingRequests && (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Aucune demande en attente
+            </p>
+          )}
+
+          {requests.map((req) => (
+            <div
+              key={req.id}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-accent"
+            >
+              <Avatar className="size-9">
+                <AvatarImage src={req.user.avatarUrl ?? ""} />
+                <AvatarFallback
+                  className={`text-xs font-bold ${getAvatarFallbackColor(req.user.displayName ?? req.user.username)}`}
+                >
+                  {getInitials(req.user.displayName ?? req.user.username)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {req.user.displayName ?? req.user.username}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  @{req.user.username}
+                </p>
+              </div>
+              <div className="flex gap-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                  onClick={() => handleJoinDecision(req.id, "accepted")}
+                >
+                  <Check className="size-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                  onClick={() => handleJoinDecision(req.id, "rejected")}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+
+          {loadingRequests && (
+            <div className="flex justify-center py-4">
+              <Spinner className="size-5" />
+            </div>
+          )}
+
+          {requestsHasMore && !loadingRequests && (
+            <button
+              onClick={() => loadRequests(requestsCursor)}
+              className="w-full text-sm text-primary py-3 hover:bg-accent cursor-pointer"
+            >
+              Charger plus
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN VIEW — scrollable sections ────────────────────
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header — compact community card */}
+      <div className="p-4 pb-3 shrink-0">
+        <div className="flex items-center gap-3">
+          <Avatar className="size-14 rounded-xl">
+            <AvatarImage src={group.imageUrl ?? ""} alt={group.name} />
+            <AvatarFallback
+              className={`rounded-xl text-xl font-bold ${getAvatarFallbackColor(group.name)}`}
+            >
+              {getInitials(group.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold truncate">{group.name}</h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Users className="size-3" />
+                {group._count.memberships} membres
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <VisIcon className="size-3" />
+                {visLabel}
+              </span>
+            </div>
+            {group.organization && (
+              <Badge variant="outline" className="text-[10px] mt-1 h-4 px-1.5 font-normal">
+                {group.organization.name}
+              </Badge>
+            )}
+          </div>
+        </div>
+        {group.description && (
+          <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+            {group.description}
+          </p>
+        )}
+        <p className="text-[11px] text-muted-foreground/70 mt-2">
+          Créé par{" "}
+          <span className="font-medium text-muted-foreground">
+            {group.creator.displayName ?? group.creator.username}
+          </span>{" "}
+          · {new Date(group.createdAt).toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
+        </p>
+      </div>
+
+      {/* ── Scrollable sections ── */}
+      <div className="flex-1 overflow-y-auto hide-scrollbar">
+
+      {/* ── Edit Section (collapsible) ── */}
+      {canEditGroup(myRole) && (
+        <div className="mx-4 mb-3 rounded-xl border overflow-hidden">
+          <button
+            onClick={() => setEditOpen(!editOpen)}
+            className="flex items-center gap-3 w-full px-3.5 py-2.5 text-left hover:bg-accent cursor-pointer"
+          >
+            <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Pencil className="size-3.5 text-primary" />
+            </div>
+            <span className="text-sm font-medium flex-1">Modifier</span>
+            {editOpen ? (
+              <ChevronUp className="size-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="size-4 text-muted-foreground" />
+            )}
+          </button>
+
+          {editOpen && (
+            <div className="px-3.5 pb-3.5 space-y-3 border-t pt-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Nom
+                </label>
+                <Input
+                  value={editForm.name ?? ""}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Description
+                </label>
+                <Textarea
+                  value={editForm.description ?? ""}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Visibilité
+                </label>
+                <Select
+                  value={editForm.visibility ?? "public"}
+                  onValueChange={(v) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      visibility: v as "public" | "private" | "secret",
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Public</SelectItem>
+                    <SelectItem value="private">Privé</SelectItem>
+                    <SelectItem value="secret">Secret</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                className="w-full cursor-pointer"
+                size="sm"
+                onClick={handleSaveEdit}
+                disabled={saving}
+              >
+                {saving ? <Spinner className="size-3.5" /> : "Enregistrer"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Members Section ── */}
+      <div className="mx-4 mb-3 rounded-xl border overflow-hidden">
+        <button
+          onClick={() => setView("members-full")}
+          className="flex items-center gap-3 w-full px-3.5 py-2.5 text-left hover:bg-accent cursor-pointer"
+        >
+          <div className="size-7 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+            <Users className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <span className="text-sm font-medium flex-1">
+            Membres · {members.length || group._count.memberships}
+          </span>
+          <ChevronDown className="size-4 text-muted-foreground -rotate-90" />
+        </button>
+
+        {/* Member preview list */}
+        {previewMembers.length > 0 && (
+          <div className="border-t">
+            {previewMembers.map((member) => (
+              <div key={member.id} className="flex items-center gap-2.5 px-3.5 py-2">
+                <Avatar className="size-7">
+                  <AvatarImage src={member.user.avatarUrl ?? ""} />
                   <AvatarFallback
-                    className={`text-xs font-bold ${getAvatarFallbackColor(req.user.displayName ?? req.user.username)}`}
+                    className={`text-[10px] font-bold ${getAvatarFallbackColor(member.user.displayName ?? member.user.username)}`}
                   >
-                    {getInitials(req.user.displayName ?? req.user.username)}
+                    {getInitials(member.user.displayName ?? member.user.username)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {req.user.displayName ?? req.user.username}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    @{req.user.username}
-                  </p>
-                </div>
-                <div className="flex gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleJoinDecision(req.id, "accepted")}
-                  >
-                    <Check className="size-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => handleJoinDecision(req.id, "rejected")}
-                  >
-                    <X className="size-3.5" />
-                  </Button>
-                </div>
+                <span className="text-xs truncate flex-1">
+                  {member.user.displayName ?? member.user.username}
+                </span>
+                {ROLE_ICONS[member.role] && (
+                  <span className="shrink-0">{ROLE_ICONS[member.role]}</span>
+                )}
               </div>
             ))}
-
-            {loadingRequests && (
-              <div className="flex justify-center py-4">
-                <Spinner className="size-5" />
-              </div>
-            )}
-
-            {requestsHasMore && !loadingRequests && (
+            {(members.length > 5 || membersHasMore) && (
               <button
-                onClick={() => loadRequests(requestsCursor)}
-                className="w-full text-sm text-primary py-3 hover:bg-muted cursor-pointer"
+                onClick={() => setView("members-full")}
+                className="w-full text-xs text-primary py-2 hover:bg-accent cursor-pointer border-t"
               >
-                Charger plus
+                Voir tous les membres
               </button>
             )}
           </div>
-        </div>
-      );
-    }
+        )}
 
-    // ── DANGER ZONE ─────────────────────────────────────
-    if (tab === "danger") {
-      return (
-        <div className="flex flex-col h-full">
-          <TabHeader title="Quitter / supprimer" />
-          <div className="flex-1 px-4 py-4 space-y-4">
-            {/* Quitter */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950 text-left cursor-pointer">
-                  <LogOut className="size-5 text-red-500" />
-                  <div>
-                    <p className="text-sm font-medium text-red-600">
-                      Quitter le groupe
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Vous ne pourrez plus voir le contenu
-                    </p>
-                  </div>
-                </button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Quitter le groupe ?</DialogTitle>
-                  <DialogDescription>
-                    Vous serez retiré de {group.name} et ne pourrez plus accéder
-                    à son contenu.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" className="cursor-pointer">
-                      Annuler
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    variant="destructive"
-                    onClick={handleLeaveGroup}
-                    className="cursor-pointer"
-                  >
-                    Quitter
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Archiver */}
-            {canArchive(myRole) && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950 text-left cursor-pointer">
-                    <Trash2 className="size-5 text-red-500" />
-                    <div>
-                      <p className="text-sm font-medium text-red-600">
-                        Archiver le groupe
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Cette action est irréversible
-                      </p>
-                    </div>
-                  </button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Archiver {group.name} ?</DialogTitle>
-                    <DialogDescription>
-                      Le groupe sera archivé et ne sera plus accessible. Cette
-                      action est irréversible.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline" className="cursor-pointer">
-                        Annuler
-                      </Button>
-                    </DialogClose>
-                    <Button
-                      variant="destructive"
-                      onClick={handleArchiveGroup}
-                      className="cursor-pointer"
-                    >
-                      Archiver
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
+        {loadingMembers && previewMembers.length === 0 && (
+          <div className="flex justify-center py-3 border-t">
+            <Spinner className="size-4" />
           </div>
+        )}
+      </div>
+
+      {/* ── Requests Section ── */}
+      {canManageMembers(myRole) && (
+        <div className="mx-4 mb-3 rounded-xl border overflow-hidden">
+          <button
+            onClick={() => setView("requests-full")}
+            className="flex items-center gap-3 w-full px-3.5 py-2.5 text-left hover:bg-accent cursor-pointer"
+          >
+            <div className="size-7 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+              <UserPlus className="size-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <span className="text-sm font-medium flex-1">
+              Demandes d&apos;adhésion
+            </span>
+            {requests.length > 0 && (
+              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full px-1.5 leading-4">
+                {requests.length}
+              </span>
+            )}
+            <ChevronDown className="size-4 text-muted-foreground -rotate-90" />
+          </button>
         </div>
-      );
-    }
+      )}
 
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    tab,
-    group,
-    myRole,
-    members,
-    membersHasMore,
-    loadingMembers,
-    requests,
-    requestsHasMore,
-    loadingRequests,
-    editForm,
-    saving,
-    searchQuery,
-    searchResults,
-    searching,
-    addingUserId,
-    currentUser,
-    membersCursor,
-    requestsCursor,
-    handleSaveEdit,
-    handleAddMember,
-    handleRemoveMember,
-    handleUpdateRole,
-    handleJoinDecision,
-    handleLeaveGroup,
-    handleArchiveGroup,
-    loadMembers,
-    loadRequests,
-  ]);
+      {/* ── Danger zone ── */}
+      <div className="mx-4 mb-4 pt-2 space-y-2">
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-red-200/60 dark:border-red-900/60 hover:bg-red-50 dark:hover:bg-red-950/50 text-left cursor-pointer">
+              <LogOut className="size-4 text-red-500" />
+              <span className="text-sm text-red-600 dark:text-red-400">
+                Quitter le groupe
+              </span>
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Quitter le groupe ?</DialogTitle>
+              <DialogDescription>
+                Vous serez retiré de {group.name} et ne pourrez plus accéder
+                à son contenu.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" className="cursor-pointer">
+                  Annuler
+                </Button>
+              </DialogClose>
+              <Button
+                variant="destructive"
+                onClick={handleLeaveGroup}
+                className="cursor-pointer"
+              >
+                Quitter
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-  return <div className="flex flex-col h-full">{content}</div>;
+        {canArchive(myRole) && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-red-200/60 dark:border-red-900/60 hover:bg-red-50 dark:hover:bg-red-950/50 text-left cursor-pointer">
+                <Trash2 className="size-4 text-red-500" />
+                <span className="text-sm text-red-600 dark:text-red-400">
+                  Archiver le groupe
+                </span>
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Archiver {group.name} ?</DialogTitle>
+                <DialogDescription>
+                  Le groupe sera archivé et ne sera plus accessible. Cette
+                  action est irréversible.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" className="cursor-pointer">
+                    Annuler
+                  </Button>
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={handleArchiveGroup}
+                  className="cursor-pointer"
+                >
+                  Archiver
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      </div>{/* end scrollable sections */}
+    </div>
+  );
 }
-
-// ── MemberRow sub-component ──────────────────────────────────
 
 function MemberRow({
   member,
