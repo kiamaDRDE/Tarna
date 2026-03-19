@@ -647,36 +647,32 @@ const OrganizationsPage = () => {
           </InputGroupAddon>
         </InputGroup>
 
-        {/* Onglets */}
-        <div className="flex flex-row gap-2">
-          {tabDefs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <Button
-                key={tab.key}
-                variant={isActive ? "default" : "outline"}
-                size="sm"
-                className={`cursor-pointer gap-1.5 rounded-full text-black dark:text-white ${isActive ? "bg-primary/20 hover:bg-primary/30" : "bg-transparent hover:bg-primary/10"}`}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                <Icon className="size-3.5" />
-                {tab.label}
-                {tab.key === "pending" && pendingOrgs.length > 0 && (
-                  <span
-                    className={`ml-0.5 text-[10px] font-bold rounded-full px-1.5 ${
-                      isActive
-                        ? "bg-primary-foreground/20"
-                        : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {pendingOrgs.length}
-                  </span>
-                )}
-              </Button>
-            );
-          })}
-        </div>
+        {/* Underline tabs */}
+      <div className="flex border-b mb-4">
+        {tabDefs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+                isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <Icon className="size-3.5" />
+              {tab.label}
+              {tab.key === "pending" && pendingOrgs.length > 0 && (
+                <span className="ml-1 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full px-1.5 leading-4">
+                  {pendingOrgs.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
         {/* Grille d'organisations */}
         {loading && !loaded[activeTab] ? (
