@@ -3,17 +3,13 @@ import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import {
   Bell,
-  Building,
   Building2,
   ChevronRight,
   Home,
-  House,
   LucideIcon,
   MessageCircle,
-  Settings,
   ShieldUser,
   User,
-  Users,
   UsersRound,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -23,7 +19,6 @@ import { useUserStore } from "@/src/store/userStore";
 import { useGroupStore } from "@/src/store/groupStore";
 import { getAvatarFallbackColor } from "@/src/lib/avatarColor";
 import { getInitials } from "@/src/lib/getInitials";
-import { IconHome, IconHomeFilled } from "@tabler/icons-react";
 
 type menuItemType = {
   id: number;
@@ -40,7 +35,6 @@ const Sidebar = () => {
 
   const isActive = (prefix: string) =>
     pathname === prefix || pathname.startsWith(prefix + "/");
-  const iconActive = isActive("/home") ? IconHomeFilled : IconHome;
 
   const initialMenu: menuItemType[] = [
     { id: 0, name: "Accueil", icon: Home, route: "/home" },

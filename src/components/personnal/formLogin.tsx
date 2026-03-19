@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { Spinner } from "../ui/spinner";
 import { toast } from "sonner";
-import { Socket } from "socket.io-client";
 
 const initialState: LoginState = { success: false, errors: {} };
 

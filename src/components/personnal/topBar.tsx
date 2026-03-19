@@ -5,14 +5,11 @@ import {
   Bell,
   Building2,
   Home,
-  House,
   LogOut,
   LucideIcon,
   Menu,
   MessageCircle,
   Moon,
-  Search,
-  Settings,
   Sun,
   User,
   Users,
@@ -20,11 +17,6 @@ import {
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import Link from "next/link";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "../ui/input-group";
 import { usePathname } from "next/navigation";
 import {
   DropdownMenu,
@@ -39,9 +31,6 @@ import { useUserStore } from "@/src/store/userStore";
 import { useTheme } from "next-themes";
 import { getAvatarFallbackColor } from "@/src/lib/avatarColor";
 import {
-  IconCirclePlusFilled,
-  IconHome,
-  IconHomeFilled,
   type Icon,
 } from "@tabler/icons-react";
 
@@ -67,7 +56,6 @@ const TopBar = () => {
     setTheme(isDark ? "light" : "dark");
   };
 
-  const iconActive = isActive("/home") ? IconHomeFilled : IconHome;
   const navItems: NavItem[] = [
     { id: 0, name: "Accueil", icon: Home, route: "/home" },
     { id: 1, name: "Organisations", icon: Building2, route: "/organizations" },

@@ -19,7 +19,6 @@ import {
   Globe,
   Lock,
   EyeOff,
-  Settings2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
@@ -107,6 +106,28 @@ const canEditGroup = (role: GroupRole | null) =>
 const canArchive = (role: GroupRole | null) =>
   role !== null && ROLE_HIERARCHY[role] >= ROLE_HIERARCHY.owner;
 
+function ViewHeader({
+  title,
+  backTo = "main",
+  onBack,
+}: {
+  title: string;
+  backTo?: View;
+  onBack: (view: View) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b">
+      <button
+        onClick={() => onBack(backTo)}
+        className="p-1 rounded-full hover:bg-muted cursor-pointer"
+      >
+        <ArrowLeft className="size-5" />
+      </button>
+      <h2 className="text-base font-semibold">{title}</h2>
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export default function GroupSettingsDrawer({ group }: Props) {
@@ -172,22 +193,40 @@ export default function GroupSettingsDrawer({ group }: Props) {
     [group.id],
   );
 
-  // Load members/requests when switching tabs
+  // Load members/requests when switching views
   useEffect(() => {
-    if (view === "members-full" && members.length === 0) loadMembers();
-    if (view === "requests-full" && requests.length === 0) loadRequests();
+    if (view === "members-full" && members.length === 0) {
+      const timeout = setTimeout(() => {
+        void loadMembers();
+      }, 0);
+      return () => clearTimeout(timeout);
+    }
+    if (view === "requests-full" && requests.length === 0) {
+      const timeout = setTimeout(() => {
+        void loadRequests();
+      }, 0);
+      return () => clearTimeout(timeout);
+    }
   }, [view, members.length, requests.length, loadMembers, loadRequests]);
 
   // Also load members preview for main view
   useEffect(() => {
-    if (view === "main" && members.length === 0) loadMembers();
+    if (view === "main" && members.length === 0) {
+      const timeout = setTimeout(() => {
+        void loadMembers();
+      }, 0);
+      return () => clearTimeout(timeout);
+    }
   }, [view, members.length, loadMembers]);
 
   // Debounced search
   useEffect(() => {
     if (searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
+      const timeout = setTimeout(() => {
+        setSearchResults([]);
+        setSearching(false);
+      }, 0);
+      return () => clearTimeout(timeout);
     }
     const timeout = setTimeout(async () => {
       setSearching(true);
@@ -197,7 +236,7 @@ export default function GroupSettingsDrawer({ group }: Props) {
       setSearching(false);
     }, 400);
     return () => clearTimeout(timeout);
-  }, [searchQuery, members]);
+  }, [searchQuery, members, group.orgId]);
 
   // ── Handlers ──────────────────────────────────────────────
 
@@ -300,26 +339,6 @@ export default function GroupSettingsDrawer({ group }: Props) {
     }
   }, [group.id]);
 
-  // ── Sub-view header with back button ─────────────────────
-
-  const ViewHeader = ({
-    title,
-    backTo = "main",
-  }: {
-    title: string;
-    backTo?: View;
-  }) => (
-    <div className="flex items-center gap-3 px-4 py-3 border-b">
-      <button
-        onClick={() => setView(backTo)}
-        className="p-1 rounded-full hover:bg-muted cursor-pointer"
-      >
-        <ArrowLeft className="size-5" />
-      </button>
-      <h2 className="text-base font-semibold">{title}</h2>
-    </div>
-  );
-
   // ── Content via useMemo ─────────────────────────────────
 
   const visIcon = group.visibility === "public" ? Globe : group.visibility === "private" ? Lock : EyeOff;
@@ -333,7 +352,7 @@ export default function GroupSettingsDrawer({ group }: Props) {
   if (view === "members-full") {
     return (
       <div className="flex flex-col h-full">
-        <ViewHeader title={`Membres (${members.length})`} />
+        <ViewHeader title={`Membres (${members.length})`} onBack={setView} />
 
         {canManageMembers(myRole) && (
           <button
@@ -386,7 +405,7 @@ export default function GroupSettingsDrawer({ group }: Props) {
   if (view === "add-member") {
     return (
       <div className="flex flex-col h-full">
-        <ViewHeader title="Ajouter un membre" backTo="members-full" />
+        <ViewHeader title="Ajouter un membre" backTo="members-full" onBack={setView} />
 
         <div className="px-4 py-3">
           <div className="relative">
@@ -461,7 +480,7 @@ export default function GroupSettingsDrawer({ group }: Props) {
   if (view === "requests-full") {
     return (
       <div className="flex flex-col h-full">
-        <ViewHeader title="Demandes d'adhésion" />
+        <ViewHeader title="Demandes d'adhésion" onBack={setView} />
 
         <div className="flex-1 overflow-y-auto hide-scrollbar">
           {requests.length === 0 && !loadingRequests && (

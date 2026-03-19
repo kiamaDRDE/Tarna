@@ -115,7 +115,7 @@ export async function signupAction(
     }
 
     return { success: true, errors: {} };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       errors: { email: "An error occurred. Please try again." },
@@ -183,7 +183,7 @@ export async function loginAction(
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       errors: { email: "An error occurred. Please try again." },

@@ -9,7 +9,6 @@ import { useUserStore } from "@/src/store/userStore";
  */
 export default function LogOutGuard({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  const users = useUserStore((s) => s.user);
   const router = useRouter();
 
   useEffect(() => {

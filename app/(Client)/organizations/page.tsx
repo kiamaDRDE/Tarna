@@ -110,7 +110,6 @@ const OrganizationsPage = () => {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  const userId = useUserStore((s) => s.user?.id);
 
   // Organisation store
   const tabs = useOrganizationStore((s) => s.tabs);
@@ -125,11 +124,11 @@ const OrganizationsPage = () => {
   const myOrgs = tabs["my-orgs"].data;
   const discoverOrgs = tabs.discover.data;
   const pendingOrgs = tabs.pending.data;
-  const loaded = {
+  const loaded = useMemo(() => ({
     "my-orgs": tabs["my-orgs"].loaded,
     discover: tabs.discover.loaded,
     pending: tabs.pending.loaded,
-  };
+  }), [tabs]);
 
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -171,7 +170,7 @@ const OrganizationsPage = () => {
         storeSetLoading(false);
       }
     },
-    [isAuthenticated, setTab, storeSetLoading, userId],
+    [isAuthenticated, setTab, storeSetLoading],
   );
 
   // Load current tab if not yet loaded

@@ -4,7 +4,6 @@ import { updateUserType } from "../types/user";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost";
-const API_PORT = process.env.NEXT_PUBLIC_API_PORT ?? "4000";
 
 /**
  * Construit l'URL de base de l'API backend.

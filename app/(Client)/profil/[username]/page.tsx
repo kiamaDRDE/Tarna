@@ -17,13 +17,10 @@ import {
   Trash,
   UserCheck,
   UserPen,
-  UserPlus,
-  Users2,
 } from "lucide-react";
 import { useUserStore } from "@/src/store/userStore";
 import { apiFetch } from "@/src/lib/api";
 import { User } from "@/src/types/user";
-import Link from "next/link";
 import FeedItem from "@/src/components/personnal/ui/feedItem";
 import { Post, ReceivePost } from "@/src/types/post";
 import { Spinner } from "@/src/components/ui/spinner";
@@ -275,7 +272,7 @@ const ProfilePage = () => {
 
         const data = await res.json();
         setProfile(data);
-      } catch (error) {
+      } catch {
         toast.error("Erreur lors du chargement du profil", {
           description: `Impossible de charger le profil de ${username}`,
         });
@@ -374,7 +371,7 @@ const ProfilePage = () => {
       });
 
       setPosts(posts);
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors du chargement des posts", {
         description: "Impossible de charger les posts de cet utilisateur.",
       });
@@ -387,7 +384,7 @@ const ProfilePage = () => {
     if (profile?.id) {
       fetchUserPosts();
     }
-  }, [profile?.id, accessToken]);
+  }, [profile?.id, accessToken, fetchUserPosts]);
 
   //   const handleFollow = useCallback(async () => {
   //     if (!profile?.id) return;
@@ -429,6 +426,7 @@ const ProfilePage = () => {
     <div className="xl:max-w-2xl xl:w-2xl w-full pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
       <div className="relative h-52 md:h-64 rounded-2xl overflow-hidden border bg-linear-to-br from-primary/20 via-primary/5 to-background">
         {profile?.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={profile?.coverUrl}
             alt="cover"

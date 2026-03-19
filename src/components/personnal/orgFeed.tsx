@@ -221,7 +221,7 @@ const NewOrgFeed = ({
       ) : (
         <div className="flex flex-col gap-3">
           {posts.map((post) => (
-            <FeedItem key={post.id} post={post} isgroup groupName={roomName} />
+            <FeedItem key={post.id} post={post} isgroup />
           ))}
 
           {/* Sentinelle infinite scroll + spinner + fallback bouton */}

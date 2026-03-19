@@ -97,11 +97,11 @@ const GroupsPage = () => {
   const myGroups = tabs["my-groups"].data;
   const discoverGroups = tabs.discover.data;
   const pendingGroups = tabs.pending.data;
-  const loaded = {
+  const loaded = useMemo(() => ({
     "my-groups": tabs["my-groups"].loaded,
     discover: tabs.discover.loaded,
     pending: tabs.pending.loaded,
-  };
+  }), [tabs]);
 
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -155,7 +155,7 @@ const GroupsPage = () => {
         storeSetLoading(false);
       }
     },
-    [isAuthenticated, setTab, storeSetLoading, userId],
+    [isAuthenticated, setTab, storeSetLoading],
   );
 
   // Load current tab if not yet loaded
@@ -163,7 +163,7 @@ const GroupsPage = () => {
     if (!loaded[activeTab]) {
       void loadTab(activeTab);
     }
-  }, [activeTab, loaded, loadTab, userId]);
+  }, [activeTab, loaded, loadTab]);
 
   // ── Debounced member search ────────────────────────────────
 

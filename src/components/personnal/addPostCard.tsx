@@ -1,20 +1,13 @@
 "use client";
 import {
-  Camera,
   FileText,
   Globe,
   GlobeLock,
-  Hash,
   ImageIcon,
-  Link2,
   LucideIcon,
   Plus,
-  Smile,
-  Users,
   X,
   Send,
-  Megaphone,
-  TriangleAlert,
   Building2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -40,8 +33,6 @@ import { useUserStore } from "@/src/store/userStore";
 import { useFeedStore } from "@/src/store/feedStore";
 import {
   createPostAction,
-  FeedState,
-  fetchPostsAction,
   type CreatePostState,
 } from "@/app/(Client)/home/actions";
 import { Spinner } from "../ui/spinner";
@@ -61,19 +52,6 @@ type MediaAction = {
   id: number;
   label: string;
   icon: LucideIcon;
-};
-
-const postOptions: VisibilityOption[] = [
-  { value: "post", label: "Post", icon: Globe },
-  { value: "annonce", label: "Annonce", icon: Megaphone },
-  { value: "note", label: "Note", icon: TriangleAlert },
-];
-
-const initialStat: FeedState = {
-  posts: [],
-  error: null,
-  nextCursor: null,
-  hasMore: false,
 };
 
 const AddPostCard = ({
