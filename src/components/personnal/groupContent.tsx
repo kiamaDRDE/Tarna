@@ -18,6 +18,7 @@ import {
   DrawerTrigger,
 } from "../ui/drawer";
 import { Button } from "../ui/button";
+import GroupChatButton from "./groupChatButton";
 
 const visibilityConfig: Record<
   string,
@@ -70,23 +71,26 @@ const GroupContent = ({
             </button>
           </Link>
           {isMember && group && (
-            <Drawer direction="right">
-              <DrawerTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 cursor-pointer rounded-lg h-8"
-                >
-                  <Settings className="size-3.5" />
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerTitle className="sr-only">
-                  {"Paramètres du groupe"}
-                </DrawerTitle>
-                <GroupSettingsDrawer group={group} />
-              </DrawerContent>
-            </Drawer>
+            <div className="flex items-center gap-1">
+              <GroupChatButton />
+              <Drawer direction="right">
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 cursor-pointer rounded-lg h-8"
+                  >
+                    <Settings className="size-3.5" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerTitle className="sr-only">
+                    {"Paramètres du groupe"}
+                  </DrawerTitle>
+                  <GroupSettingsDrawer group={group} />
+                </DrawerContent>
+              </Drawer>
+            </div>
           )}
         </div>
 
