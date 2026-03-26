@@ -56,7 +56,7 @@ import {
   flattenRawComments,
   buildCommentTree,
 } from "@/src/lib/mapComment";
-import { Spinner } from "../../ui/spinner";
+import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
 import { linkifyText } from "@/src/lib/LinklyText";
 import Link from "next/link";
@@ -867,8 +867,17 @@ const FeedItem = ({
 
             {/* Chargement */}
             {commentsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Spinner className="size-5" />
+              <div className="flex flex-col gap-3 py-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <Skeleton className="size-7 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/5" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : commentTree.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-2">

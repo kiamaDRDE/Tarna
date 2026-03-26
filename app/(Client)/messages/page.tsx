@@ -36,7 +36,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/src/components/ui/dialog";
-import { Spinner } from "@/src/components/ui/spinner";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { getInitials } from "@/src/lib/getInitials";
 import { getAvatarFallbackColor } from "@/src/lib/avatarColor";
 import { ChevronLeft, Check, CheckCheck, Clock, Plus, Search, Send } from "lucide-react";
@@ -522,8 +522,16 @@ const MessagesPage = () => {
               />
               <div className="max-h-60 overflow-y-auto space-y-1 mt-2">
                 {searchingUsers && (
-                  <div className="flex justify-center py-4">
-                    <Spinner className="size-5" />
+                  <div className="flex flex-col gap-1 py-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg">
+                        <Skeleton className="size-9 rounded-full shrink-0" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3.5 w-28" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {!searchingUsers &&
@@ -591,8 +599,19 @@ const MessagesPage = () => {
 
         {/* Conversation list */}
         {loadingConvs ? (
-          <div className="flex justify-center py-8">
-            <Spinner className="size-5" />
+          <div className="flex flex-col gap-0.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg">
+                <Skeleton className="size-10 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3.5 w-28" />
+                    <Skeleton className="h-2.5 w-10" />
+                  </div>
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredConvs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
@@ -716,8 +735,12 @@ const MessagesPage = () => {
             onScroll={handleScroll}
           >
             {loadingMsgs && (
-              <div className="flex justify-center py-2">
-                <Spinner className="size-4" />
+              <div className="flex flex-col gap-2 py-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                    <Skeleton className={`h-8 rounded-2xl ${i % 2 === 0 ? "w-48" : "w-36"}`} />
+                  </div>
+                ))}
               </div>
             )}
             {currentMessages.map((msg) => {

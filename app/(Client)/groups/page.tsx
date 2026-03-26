@@ -33,6 +33,7 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import type { GroupResponse } from "@/src/types/group";
 import type { UserSearchResult } from "@/src/types/user";
 import { getInitials } from "@/src/lib/getInitials";
@@ -532,8 +533,13 @@ const GroupsPage = () => {
                       {(memberResults.length > 0 || searchingMembers) && (
                         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
                           {searchingMembers && memberResults.length === 0 ? (
-                            <div className="flex items-center justify-center py-3">
-                              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                            <div className="flex flex-col gap-1 py-1">
+                              {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+                                  <Skeleton className="size-6 rounded-full shrink-0" />
+                                  <Skeleton className="h-3.5 w-28" />
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             memberResults.map((user) => (
@@ -655,8 +661,21 @@ const GroupsPage = () => {
 
       {/* Group list — single column */}
       {loading && !loaded[activeTab] ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3.5 p-3 rounded-xl border bg-card">
+              <Skeleton className="size-11 rounded-xl shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-52" />
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="h-3 w-14" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
+              <Skeleton className="h-7 w-16 rounded-md shrink-0" />
+            </div>
+          ))}
         </div>
       ) : currentList.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
