@@ -83,7 +83,7 @@ export default function LoginForm({
       });
       router.push("/home");
     } else if (!state.success && Object.keys(state.errors).length > 0) {
-      const firstError = state.errors.email ?? state.errors.password;
+      const firstError = state.errors.identifier ?? state.errors.password;
       toast.error("Erreur de connexion", {
         description: firstError ?? "Identifiants invalides.",
       });
@@ -100,16 +100,16 @@ export default function LoginForm({
           <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="identifier">Email ou nom d&apos;utilisateur</FieldLabel>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  className={state.errors.email ? "border-red-500" : ""}
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  placeholder="email@exemple.com ou nom_utilisateur"
+                  className={state.errors.identifier ? "border-red-500" : ""}
                 />
-                {state.errors.email && (
-                  <p className="text-sm text-red-500">{state.errors.email}</p>
+                {state.errors.identifier && (
+                  <p className="text-sm text-red-500">{state.errors.identifier}</p>
                 )}
               </Field>
               <Field>

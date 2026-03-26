@@ -32,7 +32,7 @@ export type LoginUser = {
 export type LoginState = {
   success: boolean;
   errors: {
-    email?: string;
+    identifier?: string;
     password?: string;
   };
   user?: LoginUser;
@@ -78,9 +78,15 @@ export async function signupAction(
   }
 
   if (!password) {
-    errors.password = "Password is required.";
+    errors.password = "Le mot de passe est requis.";
   } else if (password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
+    errors.password = "Le mot de passe doit contenir au moins 8 caractères.";
+  } else if (!/[A-Z]/.test(password)) {
+    errors.password = "Le mot de passe doit contenir au moins une majuscule.";
+  } else if (!/[a-z]/.test(password)) {
+    errors.password = "Le mot de passe doit contenir au moins une minuscule.";
+  } else if (!/\d/.test(password)) {
+    errors.password = "Le mot de passe doit contenir au moins un chiffre.";
   }
 
   if (!confirmPassword) {
@@ -128,21 +134,17 @@ export async function loginAction(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
-  const email = (formData.get("email") as string) ?? "";
+  const identifier = (formData.get("identifier") as string) ?? "";
   const password = (formData.get("password") as string) ?? "";
 
   const errors: LoginState["errors"] = {};
 
-  if (!email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = "Please enter a valid email address.";
+  if (!identifier.trim()) {
+    errors.identifier = "L'email ou le nom d'utilisateur est requis.";
   }
 
   if (!password) {
-    errors.password = "Password is required.";
-  } else if (password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
+    errors.password = "Le mot de passe est requis.";
   }
 
   if (Object.keys(errors).length > 0) {
@@ -153,20 +155,20 @@ export async function loginAction(
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: email, password }),
+      body: JSON.stringify({ identifier: identifier.trim(), password }),
     });
 
     if (!res.ok) {
       const data = await res.json().catch(() => null);
       return {
         success: false,
-        errors: { email: data?.message ?? "Invalid credentials." },
+        errors: { identifier: data?.message ?? "Identifiants invalides." },
       };
     }
 
     const data = await res.json();
 
-    // 🔥 Stockage du token en cookie HTTP-only
+    //  Stockage du token en cookie HTTP-only
     const cookieStore = await cookies();
     cookieStore.set("access_token", data.accessToken, {
       httpOnly: true,
@@ -186,7 +188,7 @@ export async function loginAction(
   } catch {
     return {
       success: false,
-      errors: { email: "An error occurred. Please try again." },
+      errors: { identifier: "Une erreur est survenue. Veuillez réessayer." },
     };
   }
 }

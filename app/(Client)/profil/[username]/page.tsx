@@ -10,6 +10,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import {
+  Check,
   FileText,
   Loader2,
   Lock,
@@ -17,6 +18,7 @@ import {
   Trash,
   UserCheck,
   UserPen,
+  X,
 } from "lucide-react";
 import { useUserStore } from "@/src/store/userStore";
 import { apiFetch } from "@/src/lib/api";
@@ -89,6 +91,7 @@ const ProfilePage = () => {
     newPassword: "",
     confirmNewPassword: "",
   });
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
   const [editForm, setEditForm] = useState({
     userName: "",
     fullName: "",
@@ -106,20 +109,51 @@ const ProfilePage = () => {
       newPassword: "",
       confirmNewPassword: "",
     });
+    setPasswordErrors({});
     setConfirmPassword(true);
   }, []);
+
+  const passwordRules = [
+    { key: "minLength", label: "Au moins 8 caractères", test: (v: string) => v.length >= 8 },
+    { key: "uppercase", label: "Au moins une lettre majuscule", test: (v: string) => /[A-Z]/.test(v) },
+    { key: "lowercase", label: "Au moins une lettre minuscule", test: (v: string) => /[a-z]/.test(v) },
+    { key: "digit", label: "Au moins un chiffre", test: (v: string) => /\d/.test(v) },
+  ];
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordForm((prev) => ({ ...prev, [name]: value }));
+    if (Object.keys(passwordErrors).length > 0) {
+      setPasswordErrors({});
+    }
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordLoading) return;
 
+    const errors: Record<string, string> = {};
+
+    if (!passwordForm.currentPassword.trim()) {
+      errors.currentPassword = "Le mot de passe actuel est requis.";
+    }
+
+    const pw = passwordForm.newPassword;
+    if (!pw) {
+      errors.newPassword = "Le nouveau mot de passe est requis.";
+    } else {
+      const failedRules = passwordRules.filter((r) => !r.test(pw));
+      if (failedRules.length > 0) {
+        errors.newPassword = failedRules.map((r) => r.label).join(", ") + ".";
+      }
+    }
+
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
-      toast.error("Les mots de passe ne correspondent pas");
+      errors.confirmNewPassword = "Les mots de passe ne correspondent pas.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
       return;
     }
 
@@ -824,7 +858,11 @@ const ProfilePage = () => {
                   value={passwordForm.currentPassword}
                   onChange={handlePasswordChange}
                   placeholder="••••••••"
+                  className={passwordErrors.currentPassword ? "border-red-500" : ""}
                 />
+                {passwordErrors.currentPassword && (
+                  <p className="text-xs text-red-500">{passwordErrors.currentPassword}</p>
+                )}
               </Field>
 
               <Field>
@@ -837,8 +875,34 @@ const ProfilePage = () => {
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={handlePasswordChange}
-                  placeholder="Min. 8 caractères"
+                  placeholder="Min. 8 caractères, 1 majuscule, 1 chiffre"
+                  className={passwordErrors.newPassword ? "border-red-500" : ""}
                 />
+                {passwordForm.newPassword.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5">
+                    {passwordRules.map((rule) => {
+                      const passed = rule.test(passwordForm.newPassword);
+                      return (
+                        <li
+                          key={rule.key}
+                          className={`flex items-center gap-1.5 text-xs ${
+                            passed ? "text-green-600" : "text-muted-foreground"
+                          }`}
+                        >
+                          {passed ? (
+                            <Check className="size-3" />
+                          ) : (
+                            <X className="size-3" />
+                          )}
+                          {rule.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {passwordErrors.newPassword && (
+                  <p className="text-xs text-red-500 mt-1">{passwordErrors.newPassword}</p>
+                )}
               </Field>
 
               <Field>
@@ -852,7 +916,11 @@ const ProfilePage = () => {
                   value={passwordForm.confirmNewPassword}
                   onChange={handlePasswordChange}
                   placeholder="••••••••"
+                  className={passwordErrors.confirmNewPassword ? "border-red-500" : ""}
                 />
+                {passwordErrors.confirmNewPassword && (
+                  <p className="text-xs text-red-500">{passwordErrors.confirmNewPassword}</p>
+                )}
               </Field>
 
               <div className="flex justify-end gap-2 pt-2 border-t">

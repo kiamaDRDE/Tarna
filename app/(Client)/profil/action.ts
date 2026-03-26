@@ -268,10 +268,33 @@ export async function changePasswordAction(
 		};
 	}
 
-	if (input.newPassword.trim().length < 8) {
+	const pw = input.newPassword.trim();
+
+	if (pw.length < 8) {
 		return {
 			success: false,
 			error: "Le nouveau mot de passe doit contenir au moins 8 caractères.",
+		};
+	}
+
+	if (!/[A-Z]/.test(pw)) {
+		return {
+			success: false,
+			error: "Le nouveau mot de passe doit contenir au moins une lettre majuscule.",
+		};
+	}
+
+	if (!/[a-z]/.test(pw)) {
+		return {
+			success: false,
+			error: "Le nouveau mot de passe doit contenir au moins une lettre minuscule.",
+		};
+	}
+
+	if (!/\d/.test(pw)) {
+		return {
+			success: false,
+			error: "Le nouveau mot de passe doit contenir au moins un chiffre.",
 		};
 	}
 
