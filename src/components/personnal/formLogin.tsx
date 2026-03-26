@@ -18,7 +18,7 @@ import { loginAction, type LoginState } from "@/app/(Register)/actions";
 import { useUserStore } from "@/src/store/userStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "../ui/spinner";
 import { toast } from "sonner";
 
@@ -30,7 +30,28 @@ export default function LoginForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter();
   const setUser = useUserStore((s) => s.setUser);
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
+  const [state, setState] = useState<LoginState>(initialState);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isPending) return;
+
+    setIsPending(true);
+    setState(initialState);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await loginAction(initialState, formData);
+      setState(result);
+    } catch {
+      toast.error("Erreur réseau", {
+        description: "Impossible de contacter le serveur. Vérifiez votre connexion et réessayez.",
+      });
+    } finally {
+      setIsPending(false);
+    }
+  }, [isPending]);
 
   useEffect(() => {
     if (state.success && state.user && state.accessToken && state.refreshToken) {
@@ -76,7 +97,7 @@ export default function LoginForm({
           <CardTitle className="text-xl">Welcome back</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={formAction} noValidate>
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>

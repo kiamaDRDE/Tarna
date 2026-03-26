@@ -17,7 +17,7 @@ import { Input } from "@/src/components/ui/input";
 import { signupAction, type SignupState } from "@/app/(Register)/actions";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "../ui/spinner";
 import { toast } from "sonner";
 
@@ -28,9 +28,28 @@ export default function SignupForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(signupAction, initialState);
+  const [state, setState] = useState<SignupState>(initialState);
+  const [isPending, setIsPending] = useState(false);
 
-  
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isPending) return;
+
+    setIsPending(true);
+    setState(initialState);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await signupAction(initialState, formData);
+      setState(result);
+    } catch {
+      toast.error("Erreur réseau", {
+        description: "Impossible de contacter le serveur. Vérifiez votre connexion et réessayez.",
+      });
+    } finally {
+      setIsPending(false);
+    }
+  }, [isPending]);
 
   useEffect(() => {
     if (state.success) {
@@ -59,7 +78,7 @@ export default function SignupForm({
           <CardTitle className="text-xl">Create your account</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={formAction} noValidate>
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup className="gap-2">
               <Field className="gap-1.5">
                 <FieldLabel htmlFor="username">Username</FieldLabel>
