@@ -385,7 +385,7 @@ const FeedItem = ({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                @{isOrgPost ? orgDisplayName : post.author.username} · {post.timeAgo}
+                @{isgroup ? post.author.username : isOrgPost ? orgDisplayName : post.author.username} · {post.timeAgo}
               </p>
             </div>
 

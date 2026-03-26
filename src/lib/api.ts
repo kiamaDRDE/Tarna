@@ -36,6 +36,7 @@ async function tryRefreshToken(): Promise<string | null> {
 
       if (!res.ok) {
         logout();
+        if (typeof window !== "undefined") window.location.href = "/login";
         return null;
       }
 
@@ -44,6 +45,7 @@ async function tryRefreshToken(): Promise<string | null> {
       return data.accessToken as string;
     } catch {
       logout();
+      if (typeof window !== "undefined") window.location.href = "/login";
       return null;
     } finally {
       refreshPromise = null;

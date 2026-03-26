@@ -10,6 +10,8 @@ import {
   IconHome,
   IconListDetails,
   IconReport,
+  IconShield,
+  IconNews,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/src/components/nav-main";
@@ -44,6 +46,16 @@ const data = {
       title: "Utilisateurs",
       url: "/dashboard/users",
       icon: IconListDetails,
+    },
+    {
+      title: "Audit Logs",
+      url: "/dashboard/audit-logs",
+      icon: IconShield,
+    },
+    {
+      title: "Modération Posts",
+      url: "/dashboard/posts",
+      icon: IconNews,
     },
     // {
     //   title: "Analytics",

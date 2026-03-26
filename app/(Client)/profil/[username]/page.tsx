@@ -253,18 +253,6 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // if (!isAuthenticated) {
-      //   setLoading(false);
-      //   return;
-      // }
-      // if (loading) {
-      //   return (
-      //     <div className="xl:max-w-2xl xl:w-2xl w-full flex flex-row items-center justify-center pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
-      //       <Spinner className="size-8" />
-      //     </div>
-      //   );
-      // }
-
       try {
         setLoading(true);
         const res = await apiFetch(`/users/${username}`, accessToken);

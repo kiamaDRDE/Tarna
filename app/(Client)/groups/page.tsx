@@ -97,11 +97,14 @@ const GroupsPage = () => {
   const myGroups = tabs["my-groups"].data;
   const discoverGroups = tabs.discover.data;
   const pendingGroups = tabs.pending.data;
-  const loaded = useMemo(() => ({
-    "my-groups": tabs["my-groups"].loaded,
-    discover: tabs.discover.loaded,
-    pending: tabs.pending.loaded,
-  }), [tabs]);
+  const loaded = useMemo(
+    () => ({
+      "my-groups": tabs["my-groups"].loaded,
+      discover: tabs.discover.loaded,
+      pending: tabs.pending.loaded,
+    }),
+    [tabs],
+  );
 
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -124,7 +127,9 @@ const GroupsPage = () => {
     [],
   );
   const [searchingMembers, setSearchingMembers] = useState(false);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | undefined>(undefined);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | undefined>(
+    undefined,
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data fetchers ──────────────────────────────────────────
@@ -243,7 +248,8 @@ const GroupsPage = () => {
       const formData = new FormData(form);
       const name = (formData.get("name") as string)?.trim();
       const description = (formData.get("description") as string)?.trim();
-      const visibility = (formData.get("visibility") as string)?.trim() || "public";
+      const visibility =
+        (formData.get("visibility") as string)?.trim() || "public";
       const orgId = (formData.get("orgId") as string)?.trim() || undefined;
 
       if (!name) {
@@ -277,9 +283,7 @@ const GroupsPage = () => {
         setDialogOpen(false);
         toast.success("Groupe créé avec succès !");
       } catch {
-        toast.error(
-          "Une erreur est survenue lors de la création du groupe.",
-        );
+        toast.error("Une erreur est survenue lors de la création du groupe.");
       } finally {
         setLoadingCreate(false);
       }
@@ -333,7 +337,7 @@ const GroupsPage = () => {
 
   return (
     <div className="xl:w-2xl xl:max-w-2xl w-full pb-20 flex flex-col gap-0 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
-      {/* Community header */}
+      {/* Group header */}
       <div className="relative rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 dark:border-primary/30 p-5 mt-6 mb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -341,16 +345,19 @@ const GroupsPage = () => {
               <Users className="size-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Communautés</h1>
+              <h1 className="text-xl font-bold">Groupes</h1>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Échangez et collaborez avec des personnes partageant vos
-                centres d&apos;intérêt.
+                Échangez et collaborez avec des personnes partageant vos centres
+                d&apos;intérêt.
               </p>
             </div>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="cursor-pointer gap-1.5 shrink-0 rounded-lg">
+              <Button
+                size="sm"
+                className="cursor-pointer gap-1.5 shrink-0 rounded-lg"
+              >
                 <Plus className="size-3.5" />
                 Nouveau
               </Button>
@@ -363,8 +370,8 @@ const GroupsPage = () => {
                     Créer un groupe
                   </DialogTitle>
                   <DialogDescription>
-                    Créez une communauté sur Tarna. Vous en serez automatiquement
-                    le propriétaire (Owner).
+                    Créez une communauté sur Tarna. Vous en serez
+                    automatiquement le propriétaire (Owner).
                   </DialogDescription>
                 </DialogHeader>
 
@@ -595,13 +602,9 @@ const GroupsPage = () => {
 
       {/* Inline stats */}
       <div className="flex items-center gap-2 mb-3 px-1 flex-wrap">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/10 dark:bg-primary/15 text-primary rounded-full px-2.5 py-1">
-          <Users className="size-3" />
-          {myGroups.length} groupes
-        </span>
         <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full px-2.5 py-1">
           <Users className="size-3" />
-          {totalMembers.toLocaleString()} membres
+          {myGroups.length} groupes
         </span>
         {pendingGroups.length > 0 && (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-full px-2.5 py-1">

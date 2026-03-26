@@ -1,3 +1,4 @@
+"use client";
 import {
   Crown,
   ShieldCheck,
@@ -17,6 +18,8 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import type { GroupResponse, GroupRole } from "@/src/types/group";
 import { getAvatarFallbackColor } from "@/src/lib/avatarColor";
+import { useState } from "react";
+import { Spinner } from "../../ui/spinner";
 
 const roleConfig: Record<
   GroupRole,
@@ -25,26 +28,22 @@ const roleConfig: Record<
   owner: {
     icon: Crown,
     label: "Owner",
-    color:
-      "text-amber-600 dark:text-amber-400",
+    color: "text-amber-600 dark:text-amber-400",
   },
   admin: {
     icon: ShieldCheck,
     label: "Admin",
-    color:
-      "text-blue-600 dark:text-blue-400",
+    color: "text-blue-600 dark:text-blue-400",
   },
   moderator: {
     icon: Shield,
     label: "Modérateur",
-    color:
-      "text-purple-600 dark:text-purple-400",
+    color: "text-purple-600 dark:text-purple-400",
   },
   member: {
     icon: UserCheck,
     label: "Membre",
-    color:
-      "text-emerald-600 dark:text-emerald-400",
+    color: "text-emerald-600 dark:text-emerald-400",
   },
 };
 
@@ -81,13 +80,12 @@ const GroupCard = ({
   onJoin,
   onCancel,
 }: GroupCardProps) => {
-  const role = group.currentUserRole
-    ? roleConfig[group.currentUserRole]
-    : null;
+  const role = group.currentUserRole ? roleConfig[group.currentUserRole] : null;
   const RoleIcon = role?.icon;
   const initials = getInitials(group.name);
   const vis = visibilityConfig[group.visibility] ?? visibilityConfig.public;
   const VisIcon = vis.icon;
+  const [isJoin, setIsJoin] = useState(false);
 
   const content = (
     <div className="flex items-center gap-3.5 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors group/card">
@@ -126,18 +124,29 @@ const GroupCard = ({
             {vis.label}
           </span>
           {"organization" in group &&
-            (group as { organization?: { name: string } | null }).organization != null && (
-            <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-normal">
-              {(group as { organization: { name: string } }).organization.name}
-            </Badge>
-          )}
+            (group as { organization?: { name: string } | null })
+              .organization != null && (
+              <Badge
+                variant="outline"
+                className="text-[10px] h-4 px-1.5 font-normal"
+              >
+                {
+                  (group as { organization: { name: string } }).organization
+                    .name
+                }
+              </Badge>
+            )}
         </div>
       </div>
 
       {/* Action */}
       <div className="shrink-0">
         {variant === "mine" ? (
-          <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover/card:opacity-100 transition-opacity" />
+          isJoin ? (
+            <Spinner className="size-4" />
+          ) : (
+            <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover/card:opacity-100 transition-opacity" />
+          )
         ) : variant === "pending" ? (
           <Button
             variant="ghost"
@@ -183,7 +192,7 @@ const GroupCard = ({
 
   if (variant === "mine") {
     return (
-      <Link href={`/groups/${group.id}`} className="block">
+      <Link href={`/groups/${group.id}`} onClick={() => setIsJoin(true)} className="block">
         {content}
       </Link>
     );

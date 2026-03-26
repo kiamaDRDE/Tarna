@@ -111,6 +111,8 @@ const MessagesPage = () => {
   const [searchingUsers, setSearchingUsers] = useState(false);
   const [creatingDm, setCreatingDm] = useState(false);
 
+  const [renderedConvs, setRenderedConvs] = useState<"chat" | "groupe">('chat'); // For animation
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -448,12 +450,13 @@ const MessagesPage = () => {
   // ── Filtered conversations ─────────────────────────────────
 
   const filteredConvs = useMemo(() => {
-    if (!search.trim()) return conversations;
+    const byType = renderedConvs === 'chat'
+      ? conversations.filter((c) => !c.estGroupe)
+      : conversations.filter((c) => c.estGroupe);
+    if (!search.trim()) return byType;
     const q = search.toLowerCase();
-    return conversations.filter((c) =>
-      getConversationName(c, userId).toLowerCase().includes(q),
-    );
-  }, [conversations, search, userId]);
+    return byType.filter((c) => getConversationName(c, userId).toLowerCase().includes(q));
+  }, [conversations, search, userId, renderedConvs]);
 
   const selectedConv = conversations.find((c) => c.id === selectedId);
 
@@ -560,6 +563,30 @@ const MessagesPage = () => {
               </div>
             </DialogContent>
           </Dialog>
+        </div>
+
+        {/* Ordner conversation type */}
+        <div className="flex items-center gap-1 mb-1 px-1">
+          <button
+            onClick={() => setRenderedConvs('chat')}
+            className={`px-3 py-1 text-sm rounded-full cursor-pointer transition-colors ${
+              renderedConvs === 'chat'
+                ? 'bg-primary/30 text-primary-foreground font-semibold'
+                : 'bg-accent text-muted-foreground hover:bg-accent/80'
+            }`}
+          >
+            Chat
+          </button>
+          <button
+            onClick={() => setRenderedConvs('groupe')}
+            className={`px-3 py-1 text-sm rounded-full cursor-pointer transition-colors ${
+              renderedConvs === 'groupe'
+                ? 'bg-primary/30 text-primary-foreground font-semibold'
+                : 'bg-accent text-muted-foreground hover:bg-accent/80'
+            }`}
+          >
+            Groupe
+          </button>
         </div>
 
         {/* Conversation list */}

@@ -124,11 +124,14 @@ const OrganizationsPage = () => {
   const myOrgs = tabs["my-orgs"].data;
   const discoverOrgs = tabs.discover.data;
   const pendingOrgs = tabs.pending.data;
-  const loaded = useMemo(() => ({
-    "my-orgs": tabs["my-orgs"].loaded,
-    discover: tabs.discover.loaded,
-    pending: tabs.pending.loaded,
-  }), [tabs]);
+  const loaded = useMemo(
+    () => ({
+      "my-orgs": tabs["my-orgs"].loaded,
+      discover: tabs.discover.loaded,
+      pending: tabs.pending.loaded,
+    }),
+    [tabs],
+  );
 
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -618,13 +621,9 @@ const OrganizationsPage = () => {
 
       {/* Inline stats */}
       <div className="flex items-center gap-2 mb-3 px-1 flex-wrap">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-primary/10 dark:bg-primary/15 text-primary rounded-full px-2.5 py-1">
-          <Users className="size-3" />
-          {myOrgs.length} mes organisations
-        </span>
         <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full px-2.5 py-1">
-          <Users className="size-3" />
-          {totalMembers.toLocaleString()} membres
+          <Building2 className="size-3" />
+          {myOrgs.length} organisations
         </span>
         {pendingOrgs.length > 0 && (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-full px-2.5 py-1">
@@ -648,31 +647,31 @@ const OrganizationsPage = () => {
         </InputGroup>
 
         {/* Underline tabs */}
-      <div className="flex border-b mb-4">
-        {tabDefs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
-                isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
-              }`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              <Icon className="size-3.5" />
-              {tab.label}
-              {tab.key === "pending" && pendingOrgs.length > 0 && (
-                <span className="ml-1 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full px-1.5 leading-4">
-                  {pendingOrgs.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+        <div className="flex border-b mb-4">
+          {tabDefs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+                  isActive
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                }`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                <Icon className="size-3.5" />
+                {tab.label}
+                {tab.key === "pending" && pendingOrgs.length > 0 && (
+                  <span className="ml-1 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full px-1.5 leading-4">
+                    {pendingOrgs.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Grille d'organisations */}
         {loading && !loaded[activeTab] ? (
