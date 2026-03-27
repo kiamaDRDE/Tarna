@@ -9,10 +9,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/src/components/ui/empty";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Image as ImageIcon, RefreshCcwIcon } from "lucide-react";
 import { fetchInitialPosts } from "./actions";
 import { Suspense } from "react";
-import { Spinner } from "@/src/components/ui/spinner";
 
 export function EmptyMuted() {
   return (
@@ -56,8 +56,33 @@ const HomePage = async () => {
 
       <Suspense
         fallback={
-          <div className="xl:max-w-2xl xl:w-2xl w-full flex flex-row justify-center pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0 pt-2">
-            <Spinner className="size-5" />
+          <div className="flex flex-col gap-4 pt-2 w-full">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
+                {/* Author row */}
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-10 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3.5 w-28" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+                {/* Content lines */}
+                <div className="space-y-2">
+                  <Skeleton className="h-3.5 w-full" />
+                  <Skeleton className="h-3.5 w-4/5" />
+                  <Skeleton className="h-3.5 w-3/5" />
+                </div>
+                {/* Image placeholder (every other) */}
+                {i % 2 === 0 && <Skeleton className="h-48 w-full rounded-lg" />}
+                {/* Action bar */}
+                <div className="flex items-center gap-6 pt-1">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              </div>
+            ))}
           </div>
         }
       >

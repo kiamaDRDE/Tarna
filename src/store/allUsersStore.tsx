@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { Post } from "../types/post";
 import { FetchUser } from "../types/user";
 
 type UsersAllState = {

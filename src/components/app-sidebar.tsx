@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   IconCamera,
-  IconDashboard,
   IconDatabase,
   IconFileAi,
   IconFileDescription,
@@ -11,10 +10,10 @@ import {
   IconHome,
   IconListDetails,
   IconReport,
-  IconSettings,
+  IconShield,
+  IconNews,
 } from "@tabler/icons-react";
 
-import { NavDocuments } from "@/src/components/nav-documents";
 import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
@@ -30,7 +29,6 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { useUserStore } from "../store/userStore";
-import { init } from "next/dist/compiled/webpack/webpack";
 
 const data = {
   user: {
@@ -48,6 +46,16 @@ const data = {
       title: "Utilisateurs",
       url: "/dashboard/users",
       icon: IconListDetails,
+    },
+    {
+      title: "Audit Logs",
+      url: "/dashboard/audit-logs",
+      icon: IconShield,
+    },
+    {
+      title: "Modération Posts",
+      url: "/dashboard/posts",
+      icon: IconNews,
     },
     // {
     //   title: "Analytics",

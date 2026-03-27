@@ -3,7 +3,6 @@ import { FetchUser, User } from "@/src/types/user";
 import { cookies } from "next/headers";
 
 const API_BASE_URL = process.env.API_BASE_URL ?? "https://localhost";
-const API_PORT = process.env.API_PORT ?? "4000";
 
 export type UserState = {
   users: FetchUser[];

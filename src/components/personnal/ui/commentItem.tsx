@@ -1,6 +1,5 @@
 "use client";
 import {
-  Heart,
   MessageCircle,
   ChevronDown,
   ChevronUp,
@@ -31,7 +30,6 @@ const CommentItem = ({
 }) => {
   const [showReplies, setShowReplies] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
-  const [liked, setLiked] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
 

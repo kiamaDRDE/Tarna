@@ -33,6 +33,7 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import type { OrganizationResponse } from "@/src/types/organization";
 import type { UserSearchResult } from "@/src/types/user";
 import { getInitials } from "@/src/lib/getInitials";
@@ -110,7 +111,6 @@ const OrganizationsPage = () => {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  const userId = useUserStore((s) => s.user?.id);
 
   // Organisation store
   const tabs = useOrganizationStore((s) => s.tabs);
@@ -125,11 +125,14 @@ const OrganizationsPage = () => {
   const myOrgs = tabs["my-orgs"].data;
   const discoverOrgs = tabs.discover.data;
   const pendingOrgs = tabs.pending.data;
-  const loaded = {
-    "my-orgs": tabs["my-orgs"].loaded,
-    discover: tabs.discover.loaded,
-    pending: tabs.pending.loaded,
-  };
+  const loaded = useMemo(
+    () => ({
+      "my-orgs": tabs["my-orgs"].loaded,
+      discover: tabs.discover.loaded,
+      pending: tabs.pending.loaded,
+    }),
+    [tabs],
+  );
 
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -171,7 +174,7 @@ const OrganizationsPage = () => {
         storeSetLoading(false);
       }
     },
-    [isAuthenticated, setTab, storeSetLoading, userId],
+    [isAuthenticated, setTab, storeSetLoading],
   );
 
   // Load current tab if not yet loaded
@@ -365,20 +368,22 @@ const OrganizationsPage = () => {
   );
 
   return (
-    <div className="xl:w-2xl xl:max-w-2xl w-full pb-20 flex flex-col gap-4 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row w-full gap-3 justify-between pt-8">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Building2 className="size-6" />
-            Organisations
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gérez vos entités officielles, publiez du contenu et collaborez avec
-            votre équipe.
-          </p>
-        </div>
-        <div className="flex flex-col justify-end shrink-0">
+    <div className="xl:w-2xl xl:max-w-2xl w-full pb-20 flex flex-col gap-0 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
+      {/* Community header */}
+      <div className="relative rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 dark:border-primary/30 p-5 mt-6 mb-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-primary/15 dark:bg-primary/20 flex items-center justify-center">
+              <Building2 className="size-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Organisations</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Gérez vos entités officielles, publiez du contenu et collaborez
+                avec votre équipe.
+              </p>
+            </div>
+          </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex flex-row items-center gap-2 cursor-pointer">
@@ -547,8 +552,13 @@ const OrganizationsPage = () => {
                       {(memberResults.length > 0 || searchingMembers) && (
                         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
                           {searchingMembers && memberResults.length === 0 ? (
-                            <div className="flex items-center justify-center py-3">
-                              <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                            <div className="flex flex-col gap-1 py-1">
+                              {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+                                  <Skeleton className="size-6 rounded-full shrink-0" />
+                                  <Skeleton className="h-3.5 w-28" />
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             memberResults.map((user) => (
@@ -615,129 +625,133 @@ const OrganizationsPage = () => {
         </div>
       </div>
 
-      {/* Stats rapides */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
-          <Building2 className="size-4 text-primary" />
-          <div>
-            <p className="text-lg font-bold leading-none">{myOrgs.length}</p>
-            <p className="text-[11px] text-muted-foreground">
-              Mes organisations
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
-          <Users className="size-4 text-primary" />
-          <div>
-            <p className="text-lg font-bold leading-none">
-              {totalMembers.toLocaleString()}
-            </p>
-            <p className="text-[11px] text-muted-foreground">Membres total</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border p-3 bg-muted/30">
-          <Clock className="size-4 text-amber-500" />
-          <div>
-            <p className="text-lg font-bold leading-none">
-              {pendingOrgs.length}
-            </p>
-            <p className="text-[11px] text-muted-foreground">En attente</p>
-          </div>
-        </div>
+      {/* Inline stats */}
+      <div className="flex items-center gap-2 mb-3 px-1 flex-wrap">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full px-2.5 py-1">
+          <Building2 className="size-3" />
+          {myOrgs.length} organisations
+        </span>
+        {pendingOrgs.length > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-full px-2.5 py-1">
+            <Clock className="size-3" />
+            {pendingOrgs.length} en attente
+          </span>
+        )}
       </div>
 
-      {/* Barre de recherche */}
-      <InputGroup className="w-full">
-        <InputGroupInput
-          placeholder="Rechercher une organisation par nom, secteur, pays..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <InputGroupAddon>
-          <Search />
-        </InputGroupAddon>
-      </InputGroup>
+      <div className="flex flex-col gap-4">
+        {/* Barre de recherche */}
+        <InputGroup className="w-full">
+          <InputGroupInput
+            placeholder="Rechercher une organisation par nom, secteur, pays..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+        </InputGroup>
 
-      {/* Onglets */}
-      <div className="flex flex-row gap-2">
-        {tabDefs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <Button
-              key={tab.key}
-              variant={isActive ? "default" : "outline"}
-              size="sm"
-              className={`cursor-pointer gap-1.5 rounded-full text-black dark:text-white ${isActive ? "bg-primary/20 hover:bg-primary/30" : "bg-transparent hover:bg-primary/10" }`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              <Icon className="size-3.5" />
-              {tab.label}
-              {tab.key === "pending" && pendingOrgs.length > 0 && (
-                <span
-                  className={`ml-0.5 text-[10px] font-bold rounded-full px-1.5 ${
-                    isActive
-                      ? "bg-primary-foreground/20"
-                      : "bg-primary/10 text-primary"
-                  }`}
-                >
-                  {pendingOrgs.length}
-                </span>
-              )}
-            </Button>
-          );
-        })}
+        {/* Underline tabs */}
+        <div className="flex border-b mb-4">
+          {tabDefs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+                  isActive
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                }`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                <Icon className="size-3.5" />
+                {tab.label}
+                {tab.key === "pending" && pendingOrgs.length > 0 && (
+                  <span className="ml-1 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full px-1.5 leading-4">
+                    {pendingOrgs.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Grille d'organisations */}
+        {loading && !loaded[activeTab] ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border bg-card overflow-hidden shadow-sm">
+                {/* Banner */}
+                <Skeleton className="h-24 w-full rounded-none" />
+                {/* Content */}
+                <div className="px-3 pt-5 pb-3 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Skeleton className="h-3.5 w-3.5 rounded" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-3 w-40" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                  <div className="flex items-center gap-3 pt-1">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                {/* Footer button */}
+                <div className="px-3 pb-3">
+                  <Skeleton className="h-8 w-full rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : currentList.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+            <Search className="size-10 opacity-30" />
+            <p className="text-sm text-center">
+              {search.trim()
+                ? "Aucune organisation ne correspond à votre recherche."
+                : activeTab === "my-orgs"
+                  ? "Vous n'êtes membre d'aucune organisation pour le moment."
+                  : activeTab === "pending"
+                    ? "Aucune demande d'adhésion en attente."
+                    : "Aucune organisation disponible pour le moment."}
+            </p>
+            {activeTab !== "discover" && !search.trim() && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="cursor-pointer"
+                onClick={() => setActiveTab("discover")}
+              >
+                <Compass className="size-4 mr-1.5" />
+                Découvrir des organisations
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {currentList.map((org) => (
+              <OrgCard
+                key={org.id}
+                org={org}
+                variant={
+                  activeTab === "my-orgs"
+                    ? "mine"
+                    : activeTab === "discover"
+                      ? "discover"
+                      : "pending"
+                }
+                actionLoading={actionLoadingId === org.id}
+                onJoin={handleJoin}
+                onCancel={handleCancel}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Grille d'organisations */}
-      {loading && !loaded[activeTab] ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : currentList.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-          <Search className="size-10 opacity-30" />
-          <p className="text-sm text-center">
-            {search.trim()
-              ? "Aucune organisation ne correspond à votre recherche."
-              : activeTab === "my-orgs"
-                ? "Vous n'êtes membre d'aucune organisation pour le moment."
-                : activeTab === "pending"
-                  ? "Aucune demande d'adhésion en attente."
-                  : "Aucune organisation disponible pour le moment."}
-          </p>
-          {activeTab !== "discover" && !search.trim() && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="cursor-pointer"
-              onClick={() => setActiveTab("discover")}
-            >
-              <Compass className="size-4 mr-1.5" />
-              Découvrir des organisations
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {currentList.map((org) => (
-            <OrgCard
-              key={org.id}
-              org={org}
-              variant={
-                activeTab === "my-orgs"
-                  ? "mine"
-                  : activeTab === "discover"
-                    ? "discover"
-                    : "pending"
-              }
-              actionLoading={actionLoadingId === org.id}
-              onJoin={handleJoin}
-              onCancel={handleCancel}
-            />
-          ))}
-        </div>
-      )}
     </div>
     // <InBuild/>
   );

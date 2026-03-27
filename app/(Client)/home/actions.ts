@@ -28,8 +28,11 @@ export async function fetchPostsAction(
 /**
  * Appel direct (SSR) — utilisé dans le RSC pour le chargement initial.
  */
-export async function fetchInitialPosts(orgId?: string): Promise<FeedState> {
-  return fetchPosts(null, null, !!orgId, orgId);
+export async function fetchInitialPosts(options?: {
+  orgId?: string;
+  groupId?: string;
+}): Promise<FeedState> {
+  return fetchPosts(null, null, options);
 }
 
 /**
@@ -38,16 +41,15 @@ export async function fetchInitialPosts(orgId?: string): Promise<FeedState> {
 export async function fetchMorePosts(
   cursor: string | null,
   token: string | null,
-  orgId?: string,
+  options?: { orgId?: string; groupId?: string },
 ): Promise<FeedState> {
-  return fetchPosts(cursor, token, !!orgId, orgId);
+  return fetchPosts(cursor, token, options);
 }
 
 async function fetchPosts(
   cursor: string | null,
   tokenOverride: string | null,
-  isgroup?: boolean,
-  groupId?: string,
+  options?: { orgId?: string; groupId?: string },
 ): Promise<FeedState> {
   // Prefer the token passed explicitly (fresh from Zustand store);
   // fall back to the HTTP-only cookie (set at login).
@@ -69,7 +71,8 @@ async function fetchPosts(
   try {
     const url = new URL(`${API_BASE_URL}/posts`);
     if (cursor) url.searchParams.set("cursor", cursor);
-    if (groupId) url.searchParams.set("orgId", groupId);
+    if (options?.orgId) url.searchParams.set("orgId", options.orgId);
+    if (options?.groupId) url.searchParams.set("groupId", options.groupId);
     const res = await fetch(url.toString(), {
       headers: {
         "Content-Type": "application/json",
@@ -116,7 +119,8 @@ async function fetchPosts(
       return {
         id: p.id,
         authorId: p.authorId ?? p.author?.id,
-        groupId: p.orgId ?? null,
+        orgId: p.orgId ?? null,
+        groupId: p.groupId ?? null,
         parentPostId: p.parentPostId ?? null,
         author: {
           id: p.author?.id,
@@ -190,8 +194,9 @@ export type CreatePostState = {
 export async function createPostAction(
   _prev: CreatePostState,
   formData: FormData,
-  isOrg: boolean,
+  _isOrg: boolean,
   orgId?: string,
+  groupId?: string,
 ): Promise<CreatePostState> {
   const token = formData.get("token") as string;
   const authorId = formData.get("authorId") as string;
@@ -218,8 +223,11 @@ export async function createPostAction(
   payload.append("authorId", authorId);
   payload.append("contentText", contentText);
   payload.append("visibility", visibility);
-  if (isOrg && orgId) {
+  if (orgId) {
     payload.append("orgId", orgId);
+  }
+  if (groupId) {
+    payload.append("groupId", groupId);
   }
 
   // multer.array("images")
@@ -262,7 +270,8 @@ export async function createPostAction(
     const post: Post = {
       id: p.id,
       authorId: p.authorId ?? p.author?.id,
-      groupId: p.orgId ?? p.groupId ?? null,
+      orgId: p.orgId ?? null,
+      groupId: p.groupId ?? null,
       parentPostId: p.parentPostId ?? null,
       author: {
         id: p.author?.id,

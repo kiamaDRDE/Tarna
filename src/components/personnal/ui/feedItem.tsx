@@ -1,30 +1,22 @@
 "use client";
 import {
   BadgeCheck,
-  Bookmark,
   ChevronDown,
   Ellipsis,
   FileText,
-  Handshake,
   Heart,
-  Lightbulb,
   Loader2,
   MessageCircle,
   Pin,
   Send,
-  User,
-  UserCheck,
-  UserPlus,
-  EyeOff,
   Trash,
   ArrowDownToLine,
-  Download,
   X,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "../../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { FileDocument, Post } from "@/src/types/post";
+import {  FileDocument, Post } from "@/src/types/post";
 import Image from "next/image";
 import {
   Collapsible,
@@ -39,7 +31,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import {
@@ -49,11 +40,8 @@ import {
   DialogTitle,
 } from "../../ui/dialog";
 import { useUserStore } from "@/src/store/userStore";
-import { Media, Comment } from "@/src/types/post";
+import { Comment } from "@/src/types/post";
 import {
-  followUser,
-  unfollowUser,
-  checkIsFollowing,
   deletePost,
   fetchComments,
   createComment,
@@ -68,7 +56,7 @@ import {
   flattenRawComments,
   buildCommentTree,
 } from "@/src/lib/mapComment";
-import { Spinner } from "../../ui/spinner";
+import { Skeleton } from "../../ui/skeleton";
 import { toast } from "sonner";
 import { linkifyText } from "@/src/lib/LinklyText";
 import Link from "next/link";
@@ -89,21 +77,16 @@ type ReactionKind = Exclude<ReactionType, null>;
 const FeedItem = ({
   post,
   isgroup,
-  groupName,
 }: {
   post: Post;
   isgroup?: boolean;
-  groupName?: string;
 }) => {
   const [reaction, setReaction] = useState<ReactionType>(
     post.myReaction ?? null,
   );
-  const [saved, setSaved] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<FileDocument | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -212,32 +195,6 @@ const FeedItem = ({
     addComment,
     currentUser?.id,
   ]);
-
-  // Vérifie le statut de follow au montage
-  useEffect(() => {
-    if (!isAuthenticated || !post.authorId || isOwnPost) return;
-    checkIsFollowing(post.authorId, accessToken)
-      .then(setIsFollowing)
-      .catch(() => {});
-  }, [isAuthenticated, post.authorId, accessToken, isOwnPost]);
-
-  const handleFollow = useCallback(async () => {
-    if (!isAuthenticated || !post.authorId || followLoading) return;
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
-        const res = await unfollowUser(post.authorId, accessToken);
-        if (res.ok) setIsFollowing(false);
-      } else {
-        const res = await followUser(post.authorId, accessToken);
-        if (res.ok) setIsFollowing(true);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setFollowLoading(false);
-    }
-  }, [isAuthenticated, post.authorId, accessToken, isFollowing, followLoading]);
 
   const handleDelete = useCallback(async () => {
     if (!isAuthenticated || deleteLoading) return;
@@ -354,7 +311,7 @@ const FeedItem = ({
     [isAuthenticated, accessToken, post.id, updatePost, flushReactionQueue],
   );
 
-  const handleDownloadFile = (url: string, fileName: string, index: number) => {
+  const handleDownloadFile = (url: string, fileName: string) => {
     const link = document.createElement("a");
     link.target = "_blank";
     link.href = url;
@@ -373,7 +330,8 @@ const FeedItem = ({
     const addDelta = optimisticReaction === type ? 1 : 0;
     return Math.max(0, safeCount + removeDelta + addDelta);
   }
-  const isOrgPost = Boolean(post.groupId || post.organization?.id);
+  const isOrgPost = Boolean(post.orgId || post.organization?.id);
+  const isGroupPost = Boolean(post.groupId);
   const orgDisplayName = post.organization?.name || "Organisation";
   const orgInitials = getInitials(orgDisplayName);
   
@@ -383,7 +341,7 @@ const FeedItem = ({
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         {/* ─── Header ─── */}
         <CardHeader className="flex flex-row items-start justify-between pb-2">
-         <Link href={isOrgPost ? `/organizations/${post.organization?.id}` : `/profil/${post.author.username}`}>
+         <Link href={isOrgPost ? `/organizations/${post.organization?.id}` : isGroupPost ? `/groups/${post.groupId}` : `/profil/${post.author.username}`}>
           <div className="flex flex-row items-center gap-3">
             <Avatar className="size-10">
               <AvatarImage
@@ -412,14 +370,22 @@ const FeedItem = ({
                 {!isgroup && isOrgPost && (
                   <Badge
                     variant={"outline"}
-                    className="text-[9px] bg-primary/10"
+                    className="text-[9px] bg-primary/10 text-primary"
                   >
                     {"Organisation"}
                   </Badge>
                 )}
+                {!isgroup && isGroupPost && (
+                  <Badge
+                    variant={"outline"}
+                    className="text-[9px] bg-primary/10 text-primary"
+                  >
+                    {"Groupe"}
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
-                @{isOrgPost ? orgDisplayName : post.author.username} · {post.timeAgo}
+                @{isgroup ? post.author.username : isOrgPost ? orgDisplayName : post.author.username} · {post.timeAgo}
               </p>
             </div>
 
@@ -671,7 +637,7 @@ const FeedItem = ({
                     asChild
                     variant={"outline"}
                     onClick={() =>
-                      handleDownloadFile(media.url, media.fileName, index)
+                      handleDownloadFile(media.url, media.fileName)
                     }
                   >
                     <div>
@@ -901,8 +867,17 @@ const FeedItem = ({
 
             {/* Chargement */}
             {commentsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Spinner className="size-5" />
+              <div className="flex flex-col gap-3 py-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <Skeleton className="size-7 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/5" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : commentTree.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-2">
@@ -921,5 +896,6 @@ const FeedItem = ({
 };
 
 export default FeedItem;
+
 
 

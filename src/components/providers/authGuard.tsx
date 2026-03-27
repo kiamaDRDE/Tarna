@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/src/store/userStore";
+import { useStoreHydrated } from "@/src/hooks/useStoreHydrated";
 import type { TokenValidationResponse } from "@/app/api/validate-token/route";
 
 /**
@@ -34,6 +35,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const setTokens = useUserStore((s) => s.setTokens);
   const logout = useUserStore((s) => s.logout);
   const router = useRouter();
+  const hydrated = useStoreHydrated();
   const [checked, setChecked] = useState(false);
 
   const tryRefresh = useCallback(async (): Promise<boolean> => {
@@ -60,6 +62,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function check() {
+      // Wait for Zustand persist hydration before checking
+      if (!hydrated) return;
+
       // Not authenticated at all → go to login
       if (!isAuthenticated || !accessToken) {
         router.replace("/login");
@@ -110,7 +115,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken, user?.role, router, logout, tryRefresh]);
+  }, [hydrated, isAuthenticated, accessToken, user?.role, router, logout, tryRefresh]);
 
   if (!checked) return null;
 

@@ -24,6 +24,7 @@ export function mapRawPost(p: any): Post {
   return {
     id: p.id,
     authorId: p.authorId ?? p.author?.id,
+    orgId: p.orgId ?? null,
     groupId: p.groupId ?? null,
     parentPostId: p.parentPostId ?? null,
     author: {

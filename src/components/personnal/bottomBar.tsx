@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, House, LucideIcon, MessageCircle, Users } from "lucide-react";
+import { Bell, House, LucideIcon, MessageCircle, Users, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,9 +14,9 @@ type NavItem = {
 const navItems: NavItem[] = [
   { id: 0, name: "Home", icon: House, route: "/home" },
   { id: 1, name: "Organisations", icon: Users, route: "/organizations" },
-  // { id: 2, name: "Groups", icon: Users, route: "/groups" },
-  { id: 2, name: "Messages", icon: MessageCircle, route: "/messages" },
-  { id: 3, name: "Notifications", icon: Bell, route: "/notifications" },
+  { id: 2, name: "Groupes", icon: UsersRound, route: "/groups" },
+  { id: 3, name: "Messages", icon: MessageCircle, route: "/messages" },
+  { id: 4, name: "Notifications", icon: Bell, route: "/notifications" },
 ];
 
 const BottomBar = () => {

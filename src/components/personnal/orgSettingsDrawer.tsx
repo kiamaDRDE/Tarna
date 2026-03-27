@@ -11,7 +11,6 @@ import {
   Search,
   Shield,
   ShieldCheck,
-  Trash,
   Trash2,
   UserPlus,
   Users,
@@ -64,8 +63,6 @@ import {
   searchUsers,
   type UpdateOrgInput,
 } from "@/app/(Client)/organizations/action";
-import { on } from "events";
-import { set } from "zod";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -145,7 +142,6 @@ export default function OrgSettingsDrawer({ org }: Props) {
   // Action on members
   const [loadingDeleteUser, setLoadingDeleteUser] = useState<boolean>(false);
   const [loadingUpdateRole, setLoadingUpdateRole] = useState<boolean>(false);
-  const [loadingAddUser, setLoadingAddUser] = useState<boolean>(false);
 
   // ── Load members ────────────────────────────────────────────
 
@@ -289,7 +285,7 @@ export default function OrgSettingsDrawer({ org }: Props) {
         setLoadingDeleteUser(false);
       }
     },
-    [org.id, setLoadingDeleteUser, loadingDeleteUser],
+    [org.id],
   );
 
   const handleUpdateRole = useCallback(
@@ -307,7 +303,7 @@ export default function OrgSettingsDrawer({ org }: Props) {
         setLoadingUpdateRole(false);
       }
     },
-    [org.id, setLoadingUpdateRole, loadingUpdateRole],
+    [org.id],
   );
 
   const handleJoinDecision = useCallback(
