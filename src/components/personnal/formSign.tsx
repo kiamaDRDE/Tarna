@@ -63,9 +63,9 @@ export default function SignupForm({
   useEffect(() => {
     if (state.success) {
       toast.success("Compte créé avec succès", {
-        description: "Vous pouvez maintenant vous connecter.",
+        description: "Vérifiez votre boîte mail pour activer votre compte.",
       });
-      router.push("/login");
+      router.push("/verify-email");
     } else if (!state.success && Object.keys(state.errors).length > 0) {
       const firstError =
         state.errors.username ??

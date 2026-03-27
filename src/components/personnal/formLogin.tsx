@@ -115,12 +115,12 @@ export default function LoginForm({
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  {/* <Link
-                    href="#"
+                  <Link
+                    href="/forgot-password"
                     className="ml-auto text-sm underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
-                  </Link> */}
+                    Mot de passe oublié ?
+                  </Link>
                 </div>
                 <Input
                   id="password"
