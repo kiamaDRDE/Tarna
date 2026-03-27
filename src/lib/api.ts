@@ -4,7 +4,6 @@ import { updateUserType } from "../types/user";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost";
-const API_PORT = process.env.NEXT_PUBLIC_API_PORT ?? "4000";
 
 /**
  * Construit l'URL de base de l'API backend.
@@ -37,6 +36,7 @@ async function tryRefreshToken(): Promise<string | null> {
 
       if (!res.ok) {
         logout();
+        if (typeof window !== "undefined") window.location.href = "/login";
         return null;
       }
 
@@ -45,6 +45,7 @@ async function tryRefreshToken(): Promise<string | null> {
       return data.accessToken as string;
     } catch {
       logout();
+      if (typeof window !== "undefined") window.location.href = "/login";
       return null;
     } finally {
       refreshPromise = null;

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import {
+  Check,
   FileText,
   Loader2,
   Lock,
@@ -17,16 +18,14 @@ import {
   Trash,
   UserCheck,
   UserPen,
-  UserPlus,
-  Users2,
+  X,
 } from "lucide-react";
 import { useUserStore } from "@/src/store/userStore";
 import { apiFetch } from "@/src/lib/api";
 import { User } from "@/src/types/user";
-import Link from "next/link";
 import FeedItem from "@/src/components/personnal/ui/feedItem";
 import { Post, ReceivePost } from "@/src/types/post";
-import { Spinner } from "@/src/components/ui/spinner";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { getInitials } from "@/src/lib/getInitials";
 import { toast } from "sonner";
 import {
@@ -92,6 +91,7 @@ const ProfilePage = () => {
     newPassword: "",
     confirmNewPassword: "",
   });
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
   const [editForm, setEditForm] = useState({
     userName: "",
     fullName: "",
@@ -109,20 +109,51 @@ const ProfilePage = () => {
       newPassword: "",
       confirmNewPassword: "",
     });
+    setPasswordErrors({});
     setConfirmPassword(true);
   }, []);
+
+  const passwordRules = [
+    { key: "minLength", label: "Au moins 8 caractères", test: (v: string) => v.length >= 8 },
+    { key: "uppercase", label: "Au moins une lettre majuscule", test: (v: string) => /[A-Z]/.test(v) },
+    { key: "lowercase", label: "Au moins une lettre minuscule", test: (v: string) => /[a-z]/.test(v) },
+    { key: "digit", label: "Au moins un chiffre", test: (v: string) => /\d/.test(v) },
+  ];
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordForm((prev) => ({ ...prev, [name]: value }));
+    if (Object.keys(passwordErrors).length > 0) {
+      setPasswordErrors({});
+    }
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordLoading) return;
 
+    const errors: Record<string, string> = {};
+
+    if (!passwordForm.currentPassword.trim()) {
+      errors.currentPassword = "Le mot de passe actuel est requis.";
+    }
+
+    const pw = passwordForm.newPassword;
+    if (!pw) {
+      errors.newPassword = "Le nouveau mot de passe est requis.";
+    } else {
+      const failedRules = passwordRules.filter((r) => !r.test(pw));
+      if (failedRules.length > 0) {
+        errors.newPassword = failedRules.map((r) => r.label).join(", ") + ".";
+      }
+    }
+
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
-      toast.error("Les mots de passe ne correspondent pas");
+      errors.confirmNewPassword = "Les mots de passe ne correspondent pas.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
       return;
     }
 
@@ -256,18 +287,6 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // if (!isAuthenticated) {
-      //   setLoading(false);
-      //   return;
-      // }
-      // if (loading) {
-      //   return (
-      //     <div className="xl:max-w-2xl xl:w-2xl w-full flex flex-row items-center justify-center pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
-      //       <Spinner className="size-8" />
-      //     </div>
-      //   );
-      // }
-
       try {
         setLoading(true);
         const res = await apiFetch(`/users/${username}`, accessToken);
@@ -275,7 +294,7 @@ const ProfilePage = () => {
 
         const data = await res.json();
         setProfile(data);
-      } catch (error) {
+      } catch {
         toast.error("Erreur lors du chargement du profil", {
           description: `Impossible de charger le profil de ${username}`,
         });
@@ -374,7 +393,7 @@ const ProfilePage = () => {
       });
 
       setPosts(posts);
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors du chargement des posts", {
         description: "Impossible de charger les posts de cet utilisateur.",
       });
@@ -387,7 +406,7 @@ const ProfilePage = () => {
     if (profile?.id) {
       fetchUserPosts();
     }
-  }, [profile?.id, accessToken]);
+  }, [profile?.id, accessToken, fetchUserPosts]);
 
   //   const handleFollow = useCallback(async () => {
   //     if (!profile?.id) return;
@@ -411,8 +430,48 @@ const ProfilePage = () => {
   //   }, [profile?.id, isFollowing, accessToken, followLoading]);
   if (loading) {
     return (
-      <div className="xl:max-w-2xl xl:w-2xl w-full flex flex-row items-center justify-center pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
-        <Spinner className="size-8" />
+      <div className="xl:max-w-2xl xl:w-2xl w-full pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
+        {/* Cover skeleton */}
+        <Skeleton className="h-52 md:h-64 w-full rounded-2xl" />
+        {/* Card skeleton */}
+        <div className="relative -mt-14 md:-mt-16 mx-3 md:mx-4 rounded-xl border bg-card p-5 md:p-6 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-start gap-5">
+            <Skeleton className="size-24 md:size-28 rounded-full -mt-16 md:-mt-20 shrink-0 border-4 border-background" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-7 w-44" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3.5 w-64" />
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 rounded-xl" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Post skeletons */}
+        <div className="flex flex-col gap-4 mt-6 px-3 md:px-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-10 rounded-full" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-full" />
+                <Skeleton className="h-3.5 w-4/5" />
+              </div>
+              <div className="flex items-center gap-6 pt-1">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -429,6 +488,7 @@ const ProfilePage = () => {
     <div className="xl:max-w-2xl xl:w-2xl w-full pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
       <div className="relative h-52 md:h-64 rounded-2xl overflow-hidden border bg-linear-to-br from-primary/20 via-primary/5 to-background">
         {profile?.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={profile?.coverUrl}
             alt="cover"
@@ -587,8 +647,28 @@ const ProfilePage = () => {
         </Card>
 
         {postsLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Spinner className="size-5" />
+          <div className="flex flex-col gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-10 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3.5 w-28" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-3.5 w-full" />
+                  <Skeleton className="h-3.5 w-4/5" />
+                </div>
+                {i === 0 && <Skeleton className="h-44 w-full rounded-lg" />}
+                <div className="flex items-center gap-6 pt-1">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <Card className="py-12 px-6 text-center">
@@ -778,7 +858,11 @@ const ProfilePage = () => {
                   value={passwordForm.currentPassword}
                   onChange={handlePasswordChange}
                   placeholder="••••••••"
+                  className={passwordErrors.currentPassword ? "border-red-500" : ""}
                 />
+                {passwordErrors.currentPassword && (
+                  <p className="text-xs text-red-500">{passwordErrors.currentPassword}</p>
+                )}
               </Field>
 
               <Field>
@@ -791,8 +875,34 @@ const ProfilePage = () => {
                   type="password"
                   value={passwordForm.newPassword}
                   onChange={handlePasswordChange}
-                  placeholder="Min. 8 caractères"
+                  placeholder="Min. 8 caractères, 1 majuscule, 1 chiffre"
+                  className={passwordErrors.newPassword ? "border-red-500" : ""}
                 />
+                {passwordForm.newPassword.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5">
+                    {passwordRules.map((rule) => {
+                      const passed = rule.test(passwordForm.newPassword);
+                      return (
+                        <li
+                          key={rule.key}
+                          className={`flex items-center gap-1.5 text-xs ${
+                            passed ? "text-green-600" : "text-muted-foreground"
+                          }`}
+                        >
+                          {passed ? (
+                            <Check className="size-3" />
+                          ) : (
+                            <X className="size-3" />
+                          )}
+                          {rule.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {passwordErrors.newPassword && (
+                  <p className="text-xs text-red-500 mt-1">{passwordErrors.newPassword}</p>
+                )}
               </Field>
 
               <Field>
@@ -806,7 +916,11 @@ const ProfilePage = () => {
                   value={passwordForm.confirmNewPassword}
                   onChange={handlePasswordChange}
                   placeholder="••••••••"
+                  className={passwordErrors.confirmNewPassword ? "border-red-500" : ""}
                 />
+                {passwordErrors.confirmNewPassword && (
+                  <p className="text-xs text-red-500">{passwordErrors.confirmNewPassword}</p>
+                )}
               </Field>
 
               <div className="flex justify-end gap-2 pt-2 border-t">

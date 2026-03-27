@@ -17,27 +17,55 @@ import { Input } from "@/src/components/ui/input";
 import { signupAction, type SignupState } from "@/app/(Register)/actions";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "../ui/spinner";
 import { toast } from "sonner";
+import { Check, X } from "lucide-react";
 
 const initialState: SignupState = { success: false, errors: {} };
+
+const passwordRules = [
+  { key: "minLength", label: "Au moins 8 caractères", test: (v: string) => v.length >= 8 },
+  { key: "uppercase", label: "Au moins une lettre majuscule", test: (v: string) => /[A-Z]/.test(v) },
+  { key: "lowercase", label: "Au moins une lettre minuscule", test: (v: string) => /[a-z]/.test(v) },
+  { key: "digit", label: "Au moins un chiffre", test: (v: string) => /\d/.test(v) },
+];
 
 export default function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(signupAction, initialState);
+  const [state, setState] = useState<SignupState>(initialState);
+  const [isPending, setIsPending] = useState(false);
+  const [passwordValue, setPasswordValue] = useState("");
 
-  
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isPending) return;
+
+    setIsPending(true);
+    setState(initialState);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await signupAction(initialState, formData);
+      setState(result);
+    } catch {
+      toast.error("Erreur réseau", {
+        description: "Impossible de contacter le serveur. Vérifiez votre connexion et réessayez.",
+      });
+    } finally {
+      setIsPending(false);
+    }
+  }, [isPending]);
 
   useEffect(() => {
     if (state.success) {
       toast.success("Compte créé avec succès", {
-        description: "Vous pouvez maintenant vous connecter.",
+        description: "Vérifiez votre boîte mail pour activer votre compte.",
       });
-      router.push("/login");
+      router.push("/verify-email");
     } else if (!state.success && Object.keys(state.errors).length > 0) {
       const firstError =
         state.errors.username ??
@@ -59,7 +87,7 @@ export default function SignupForm({
           <CardTitle className="text-xl">Create your account</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={formAction} noValidate>
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup className="gap-2">
               <Field className="gap-1.5">
                 <FieldLabel htmlFor="username">Username</FieldLabel>
@@ -122,6 +150,8 @@ export default function SignupForm({
                       name="password"
                       type="password"
                       placeholder="••••••••"
+                      value={passwordValue}
+                      onChange={(e) => setPasswordValue(e.target.value)}
                       className={state.errors.password ? "border-red-500" : ""}
                     />
                     {state.errors.password && (
@@ -144,9 +174,28 @@ export default function SignupForm({
                     )}
                   </Field>
                 </Field>
-                <FieldDescription>
-                  Must be at least 8 characters long.
-                </FieldDescription>
+                {passwordValue.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {passwordRules.map((rule) => {
+                      const passed = rule.test(passwordValue);
+                      return (
+                        <li
+                          key={rule.key}
+                          className={`flex items-center gap-1.5 text-xs ${
+                            passed ? "text-green-600" : "text-muted-foreground"
+                          }`}
+                        >
+                          {passed ? (
+                            <Check className="size-3" />
+                          ) : (
+                            <X className="size-3" />
+                          )}
+                          {rule.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </Field>
               <Field>
                 <Button type="submit" disabled={isPending}>

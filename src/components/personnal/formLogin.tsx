@@ -18,10 +18,9 @@ import { loginAction, type LoginState } from "@/app/(Register)/actions";
 import { useUserStore } from "@/src/store/userStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "../ui/spinner";
 import { toast } from "sonner";
-import { Socket } from "socket.io-client";
 
 const initialState: LoginState = { success: false, errors: {} };
 
@@ -31,7 +30,28 @@ export default function LoginForm({
 }: React.ComponentProps<"div">) {
   const router = useRouter();
   const setUser = useUserStore((s) => s.setUser);
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
+  const [state, setState] = useState<LoginState>(initialState);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isPending) return;
+
+    setIsPending(true);
+    setState(initialState);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await loginAction(initialState, formData);
+      setState(result);
+    } catch {
+      toast.error("Erreur réseau", {
+        description: "Impossible de contacter le serveur. Vérifiez votre connexion et réessayez.",
+      });
+    } finally {
+      setIsPending(false);
+    }
+  }, [isPending]);
 
   useEffect(() => {
     if (state.success && state.user && state.accessToken && state.refreshToken) {
@@ -63,7 +83,7 @@ export default function LoginForm({
       });
       router.push("/home");
     } else if (!state.success && Object.keys(state.errors).length > 0) {
-      const firstError = state.errors.email ?? state.errors.password;
+      const firstError = state.errors.identifier ?? state.errors.password;
       toast.error("Erreur de connexion", {
         description: firstError ?? "Identifiants invalides.",
       });
@@ -77,30 +97,30 @@ export default function LoginForm({
           <CardTitle className="text-xl">Welcome back</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={formAction} noValidate>
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="identifier">Email ou nom d&apos;utilisateur</FieldLabel>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  className={state.errors.email ? "border-red-500" : ""}
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  placeholder="email@exemple.com ou nom_utilisateur"
+                  className={state.errors.identifier ? "border-red-500" : ""}
                 />
-                {state.errors.email && (
-                  <p className="text-sm text-red-500">{state.errors.email}</p>
+                {state.errors.identifier && (
+                  <p className="text-sm text-red-500">{state.errors.identifier}</p>
                 )}
               </Field>
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
+                  <Link
+                    href="/forgot-password"
                     className="ml-auto text-sm underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
-                  </a>
+                    Mot de passe oublié ?
+                  </Link>
                 </div>
                 <Input
                   id="password"

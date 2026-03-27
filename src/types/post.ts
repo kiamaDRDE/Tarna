@@ -48,6 +48,7 @@ export type FileDocument = {
 export type Post = {
   id: string;
   authorId?: string;
+  orgId?: string | null;
   groupId?: string | null;
   parentPostId?: string | null;
   author: {
@@ -101,6 +102,7 @@ export type ReceivePost = {
   id: string;
   authorId: string;
   orgId: string | null;
+  groupId: string | null;
   parentPostId: string | null;
   contentText: string;
   visibility: Visibility;
