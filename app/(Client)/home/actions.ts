@@ -216,8 +216,9 @@ export async function createPostAction(
     .getAll("images")
     .filter((f): f is File => f instanceof File && f.size > 0);
 
-  const doc = formData.get("files");
-  const document = doc instanceof File && doc.size > 0 ? doc : null;
+  const documents = formData
+    .getAll("files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
 
   const payload = new FormData();
   payload.append("authorId", authorId);
@@ -235,8 +236,8 @@ export async function createPostAction(
     payload.append("images", image, image.name);
   }
 
-  if (document) {
-    payload.append("files", document, document.name);
+  for (const doc of documents) {
+    payload.append("files", doc, doc.name);
   }
 
   try {
