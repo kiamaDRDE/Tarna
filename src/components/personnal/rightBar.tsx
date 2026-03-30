@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { groupsData } from "@/src/data/groups";
 import Link from "next/link";
+import AnnouncementRightBarWidget from "./ui/announcementRightBarWidget";
 
 /* ─── Suggestions de personnes ─── */
 const suggestedPeople = [
@@ -41,6 +42,9 @@ const suggestedGroups = groupsData
 const RightBar = () => {
   return (
     <div className="w-75 pl-2 h-full hidden xl:flex flex-col gap-3 overflow-y-auto hide-scrollbar py-1 pr-1">
+      {/* ─── Annonces officielles ─── */}
+      <AnnouncementRightBarWidget />
+
       {/* ─── Tendances ─── */}
       {/* <Card className="gap-0 py-3 px-0 border shadow-none">
         <CardHeader className="px-4 pb-2 pt-0">
@@ -71,7 +75,7 @@ const RightBar = () => {
       </Card> */}
 
       {/* ─── Suggestions de personnes ─── */}
-      <Card className="gap-0 py-3 px-0 border shadow-none">
+      {/* <Card className="gap-0 py-3 px-0 border shadow-none">
         <CardHeader className="px-4 pb-2 pt-0">
           <div className="flex flex-row items-center gap-2">
             <UserPlus className="size-4 text-primary" />
@@ -110,10 +114,10 @@ const RightBar = () => {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* ─── Groupes suggérés ─── */}
-      <Card className="gap-0 py-3 px-0 border shadow-none">
+      {/* <Card className="gap-0 py-3 px-0 border shadow-none">
         <CardHeader className="px-4 pb-2 pt-0">
           <div className="flex flex-row items-center justify-between">
             <div className="flex flex-row items-center gap-2">
@@ -164,7 +168,7 @@ const RightBar = () => {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* ─── Footer ─── */}
       <div className="px-3 pb-4 pt-1">
