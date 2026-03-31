@@ -181,6 +181,7 @@ const MessagesPage = () => {
 
   useEffect(() => {
     if (!socket) return;
+    const timers = typingClearTimers.current;
 
     const handleNewMessage = (msg: Message) => {
       // Skip addMessage for own messages — we already have the optimistic version
@@ -274,8 +275,8 @@ const MessagesPage = () => {
       socket.off("user:offline", handleOffline);
       socket.off("messages_lus", handleMessagesRead);
       // Clear all typing timers
-      typingClearTimers.current.forEach((t) => clearTimeout(t));
-      typingClearTimers.current.clear();
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
     };
   }, [
     socket,

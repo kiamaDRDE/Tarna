@@ -28,6 +28,7 @@ export async function fetchOrgAnnouncements(
   orgId: string,
   cursor?: string | null,
   status?: "active" | "archived",
+  groupId?: string,
 ): Promise<PaginatedAnnouncementsResponse> {
   const token = await getToken();
   if (!token) return emptyPage();
@@ -37,6 +38,7 @@ export async function fetchOrgAnnouncements(
   );
   if (cursor) url.searchParams.set("cursor", cursor);
   if (status) url.searchParams.set("status", status);
+  if (groupId) url.searchParams.set("groupId", groupId);
 
   try {
     const res = await fetch(url.toString(), {
@@ -239,12 +241,11 @@ export async function fetchOrgGroups(
   try {
     const url = new URL(`${API_BASE_URL}/groups`);
     url.searchParams.set("orgId", orgId);
-    url.searchParams.set("limit", "100");
+    url.searchParams.set("limit", "50");
 
     const res = await fetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
       },
       cache: "no-store",
     });

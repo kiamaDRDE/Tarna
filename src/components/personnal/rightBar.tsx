@@ -1,43 +1,4 @@
-import { Users, UserPlus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Button } from "../ui/button";
-import { groupsData } from "@/src/data/groups";
-import Link from "next/link";
 import AnnouncementRightBarWidget from "./ui/announcementRightBarWidget";
-
-/* ─── Suggestions de personnes ─── */
-const suggestedPeople = [
-  {
-    id: 1,
-    name: "Sophie Ndong",
-    role: "Product Designer",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
-    initials: "SN",
-  },
-  {
-    id: 2,
-    name: "Alain Kamga",
-    role: "Backend Developer",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80",
-    initials: "AK",
-  },
-  {
-    id: 3,
-    name: "Fatou Diallo",
-    role: "Data Analyst",
-    avatar:
-      "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&q=80",
-    initials: "FD",
-  },
-];
-
-/* ─── Groupes suggérés (non membre, non pending) ─── */
-const suggestedGroups = groupsData
-  .filter((g) => !g.isMember && !g.isPending)
-  .slice(0, 3);
 
 const RightBar = () => {
   return (

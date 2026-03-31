@@ -12,7 +12,7 @@ import {
   Trash2,
   Users,
   Clock,
-  MoreVertical,
+  MoreHorizontal,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "../../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
@@ -26,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import { Announcement } from "@/src/types/announcement";
-import { useUserStore } from "@/src/store/userStore";
 import { useAnnouncementStore } from "@/src/store/announcementStore";
 import {
   markAnnouncementRead,
@@ -37,11 +36,10 @@ import { toast } from "sonner";
 import { getAvatarFallbackColor } from "@/src/lib/avatarColor";
 import { getInitials } from "@/src/lib/getInitials";
 import { linkifyText } from "@/src/lib/LinklyText";
-import type { OrgRole } from "@/src/types/organization";
 
 type Props = {
   announcement: Announcement;
-  userRole?: OrgRole | null;
+  userRole?: string | null;
   onOpenReadStats?: (id: string) => void;
 };
 
@@ -52,7 +50,6 @@ const AnnouncementBanner = ({
 }: Props) => {
   const [expanded, setExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const currentUser = useUserStore((s) => s.user);
   const markRead = useAnnouncementStore((s) => s.markAsRead);
   const removeAnnouncement = useAnnouncementStore((s) => s.removeAnnouncement);
 
@@ -65,15 +62,21 @@ const AnnouncementBanner = ({
   const authorInitials = getInitials(authorName);
 
   // Compute timeAgo
-  const now = Date.now();
-  const created = new Date(announcement.createdAt).getTime();
-  const diffH = Math.floor((now - created) / (1000 * 60 * 60));
-  const timeAgo =
-    diffH < 1
+  const computeTimeAgo = useCallback(() => {
+    const created = new Date(announcement.createdAt).getTime();
+    const diffH = Math.floor((Date.now() - created) / (1000 * 60 * 60));
+    return diffH < 1
       ? "À l'instant"
       : diffH < 24
         ? `Il y a ${diffH}h`
         : `Il y a ${Math.floor(diffH / 24)}j`;
+  }, [announcement.createdAt]);
+
+  const [timeAgo, setTimeAgo] = useState(computeTimeAgo);
+  useEffect(() => {
+    const interval = setInterval(() => setTimeAgo(computeTimeAgo()), 60_000);
+    return () => clearInterval(interval);
+  }, [computeTimeAgo]);
 
   // Mark as read when expanded
   useEffect(() => {
@@ -215,7 +218,7 @@ const AnnouncementBanner = ({
                     size="sm"
                     className="size-7 p-0"
                   >
-                    <MoreVertical className="size-3.5" />
+                    <MoreHorizontal className="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">

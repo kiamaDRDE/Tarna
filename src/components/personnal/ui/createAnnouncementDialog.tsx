@@ -21,7 +21,10 @@ import {
   SelectValue,
 } from "../../ui/select";
 import { Checkbox } from "../../ui/checkbox";
-import { createAnnouncement } from "@/app/(Client)/organizations/announcementActions";
+import {
+  createAnnouncement,
+  fetchOrgGroups,
+} from "@/app/(Client)/organizations/announcementActions";
 import { useAnnouncementStore } from "@/src/store/announcementStore";
 import { toast } from "sonner";
 import { Spinner } from "../../ui/spinner";
@@ -34,13 +37,11 @@ type GroupOption = {
 
 type Props = {
   orgId: string;
-  orgGroups: GroupOption[];
   delegateOptions?: { id: string; displayName: string | null; username: string }[];
 };
 
 const CreateAnnouncementDialog = ({
   orgId,
-  orgGroups,
   delegateOptions,
 }: Props) => {
   const [open, setOpen] = useState(false);
@@ -52,8 +53,28 @@ const CreateAnnouncementDialog = ({
   const [isPinned, setIsPinned] = useState(true);
   const [expiresAt, setExpiresAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [orgGroups, setOrgGroups] = useState<GroupOption[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
 
   const addAnnouncement = useAnnouncementStore((s) => s.addAnnouncement);
+
+  // Fetch groups when scope changes to "groups"
+  useEffect(() => {
+    if (scope !== "groups" || orgGroups.length > 0) return;
+    let cancelled = false;
+    void (async () => {
+      setLoadingGroups(true);
+      try {
+        const groups = await fetchOrgGroups(orgId);
+        if (!cancelled) setOrgGroups(groups);
+      } finally {
+        if (!cancelled) setLoadingGroups(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [scope, orgId, orgGroups.length]);
 
   const resetForm = useCallback(() => {
     setTitle("");
@@ -192,23 +213,34 @@ const CreateAnnouncementDialog = ({
           </div>
 
           {/* Group selection */}
-          {scope === "groups" && orgGroups.length > 0 && (
+          {scope === "groups" && (
             <div className="space-y-1.5">
               <Label>Groupes cibles</Label>
-              <div className="max-h-32 overflow-y-auto space-y-1 rounded-md border p-2">
-                {orgGroups.map((group) => (
-                  <label
-                    key={group.id}
-                    className="flex items-center gap-2 px-1 py-1 rounded hover:bg-accent cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={selectedGroups.includes(group.id)}
-                      onCheckedChange={() => toggleGroup(group.id)}
-                    />
-                    <span className="text-sm">{group.name}</span>
-                  </label>
-                ))}
-              </div>
+              {loadingGroups ? (
+                <div className="flex items-center justify-center py-4">
+                  <Spinner className="size-4" />
+                  <span className="text-sm text-muted-foreground ml-2">Chargement des groupes…</span>
+                </div>
+              ) : orgGroups.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">
+                  Aucun groupe trouvé pour cette organisation.
+                </p>
+              ) : (
+                <div className="max-h-32 overflow-y-auto space-y-1 rounded-md border p-2">
+                  {orgGroups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center gap-2 px-1 py-1 rounded hover:bg-accent cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedGroups.includes(group.id)}
+                        onCheckedChange={() => toggleGroup(group.id)}
+                      />
+                      <span className="text-sm">{group.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

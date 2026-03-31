@@ -5,7 +5,7 @@ import { useAnnouncementStore } from "@/src/store/announcementStore";
 import { fetchOrgAnnouncements } from "@/app/(Client)/organizations/announcementActions";
 import AnnouncementBanner from "./announcementBanner";
 import type { Announcement } from "@/src/types/announcement";
-import type { OrgRole } from "@/src/types/organization";
+
 import { Spinner } from "../../ui/spinner";
 import { Button } from "../../ui/button";
 import { Archive, ChevronDown, ChevronUp } from "lucide-react";
@@ -13,11 +13,12 @@ import { useSocketEvent } from "@/src/hooks/useSocketEvent";
 
 type Props = {
   orgId: string;
-  userRole: OrgRole | null | undefined;
+  userRole: string | null | undefined;
   isAdmin: boolean;
+  groupId?: string;
 };
 
-const AnnouncementSection = ({ orgId, userRole, isAdmin }: Props) => {
+const AnnouncementSection = ({ orgId, userRole, groupId }: Props) => {
   const announcements = useAnnouncementStore((s) => s.announcements);
   const setAnnouncements = useAnnouncementStore((s) => s.setAnnouncements);
   const addAnnouncement = useAnnouncementStore((s) => s.addAnnouncement);
@@ -37,30 +38,45 @@ const AnnouncementSection = ({ orgId, userRole, isAdmin }: Props) => {
     if (hydrated.current) return;
     hydrated.current = true;
     setLoading(true);
-    fetchOrgAnnouncements(orgId, null, "active")
+    fetchOrgAnnouncements(orgId, null, "active", groupId)
       .then((res) => {
         setAnnouncements(res.data, res.meta.nextCursor, res.meta.hasMore);
       })
       .finally(() => setLoading(false));
-  }, [orgId, setAnnouncements, setLoading]);
+  }, [orgId, groupId, setAnnouncements, setLoading]);
 
   // ── WebSocket listeners ──
   const handleNewAnnouncement = useCallback(
     (data: Announcement) => {
-      if (data.orgId === orgId) {
-        addAnnouncement(data);
+      if (data.orgId !== orgId) return;
+      // In group context, only show announcements targeting this group
+      if (groupId) {
+        const targetsThisGroup =
+          data.scope === "groups" &&
+          data.targets?.some((t) => t.groupId === groupId);
+        if (!targetsThisGroup) return;
       }
+      addAnnouncement(data);
     },
-    [orgId, addAnnouncement],
+    [orgId, groupId, addAnnouncement],
   );
 
   const handleUpdatedAnnouncement = useCallback(
     (data: Announcement) => {
-      if (data.orgId === orgId) {
-        updateAnnouncement(data.id, data);
+      if (data.orgId !== orgId) return;
+      if (groupId) {
+        const targetsThisGroup =
+          data.scope === "groups" &&
+          data.targets?.some((t) => t.groupId === groupId);
+        if (!targetsThisGroup) {
+          // If updated and no longer targets this group, remove it
+          removeAnnouncement(data.id);
+          return;
+        }
       }
+      updateAnnouncement(data.id, data);
     },
-    [orgId, updateAnnouncement],
+    [orgId, groupId, updateAnnouncement, removeAnnouncement],
   );
 
   const handleArchivedAnnouncement = useCallback(
@@ -87,13 +103,13 @@ const AnnouncementSection = ({ orgId, userRole, isAdmin }: Props) => {
     if (!showArchived) {
       setShowArchived(true);
       setArchivedLoading(true);
-      const res = await fetchOrgAnnouncements(orgId, null, "archived");
+      const res = await fetchOrgAnnouncements(orgId, null, "archived", groupId);
       setArchivedAnnouncements(res.data);
       setArchivedLoading(false);
     } else {
       setShowArchived(false);
     }
-  }, [orgId, showArchived]);
+  }, [orgId, showArchived, groupId]);
 
   const pinned = announcements.filter(
     (a) => a.isPinned && a.status === "active",

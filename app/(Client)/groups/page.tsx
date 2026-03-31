@@ -235,11 +235,6 @@ const GroupsPage = () => {
     );
   }, [activeTab, search, myGroups, discoverGroups, pendingGroups]);
 
-  const totalMembers = useMemo(
-    () => myGroups.reduce((sum, g) => sum + g._count.memberships, 0),
-    [myGroups],
-  );
-
   // ── Handlers ──────────────────────────────────────────────
 
   const handleCreateGroup = useCallback(

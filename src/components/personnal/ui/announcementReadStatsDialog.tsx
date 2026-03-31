@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -35,33 +35,37 @@ const AnnouncementReadStatsDialog = ({
 }: Props) => {
   const [stats, setStats] = useState<AnnouncementReadStats | null>(null);
   const [readers, setReaders] = useState<AnnouncementReader[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [fetchId, setFetchId] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!announcementId) return;
-    setLoading(true);
-    const [statsData, readersData] = await Promise.all([
-      fetchReadStats(announcementId),
-      fetchReaders(announcementId),
-    ]);
-    setStats(statsData);
-    setReaders(readersData.data);
-    setNextCursor(readersData.meta.nextCursor);
-    setHasMore(readersData.meta.hasMore);
-    setLoading(false);
-  }, [announcementId]);
+  const loading = open && !!announcementId && fetchId !== announcementId;
 
-  useEffect(() => {
-    if (open && announcementId) {
-      load();
-    }
-    if (!open) {
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
       setStats(null);
       setReaders([]);
+      setFetchId(null);
     }
-  }, [open, announcementId, load]);
+    onOpenChange(newOpen);
+  };
+
+  useEffect(() => {
+    if (!open || !announcementId) return;
+    let cancelled = false;
+    Promise.all([
+      fetchReadStats(announcementId),
+      fetchReaders(announcementId),
+    ]).then(([statsData, readersData]) => {
+      if (cancelled) return;
+      setStats(statsData);
+      setReaders(readersData.data);
+      setNextCursor(readersData.meta.nextCursor);
+      setHasMore(readersData.meta.hasMore);
+      setFetchId(announcementId);
+    });
+    return () => { cancelled = true; };
+  }, [open, announcementId]);
 
   const loadMore = async () => {
     if (!announcementId || !nextCursor) return;
@@ -72,7 +76,7 @@ const AnnouncementReadStatsDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

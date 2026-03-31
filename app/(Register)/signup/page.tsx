@@ -1,5 +1,3 @@
-import { GalleryVerticalEnd } from "lucide-react"
-
 import SignupForm  from "@/src/components/personnal/formSign"
 import Image from "next/image"
 

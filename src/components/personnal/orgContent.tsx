@@ -104,7 +104,7 @@ const OrgContent = ({ org }: { org: DetailedOrganizationResponse | null }) => {
             </div>
             <div className="pr-5 flex items-center gap-2">
               {isAdmin && org?.id && (
-                <CreateAnnouncementDialog orgId={org.id} orgGroups={[]} />
+                <CreateAnnouncementDialog orgId={org.id} />
               )}
               {isMember && (
                 <Drawer direction="right">
