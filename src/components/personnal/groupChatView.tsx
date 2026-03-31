@@ -108,6 +108,7 @@ const GroupChatView = ({ groupId, groupName }: Props) => {
 
   useEffect(() => {
     if (!socket || !convId) return;
+    const timers = typingClearTimers.current;
 
     const handleNewMessage = (msg: Message) => {
       if (msg.conversationId !== convId) return;
@@ -154,8 +155,8 @@ const GroupChatView = ({ groupId, groupName }: Props) => {
       socket.off("nouveau_message", handleNewMessage);
       socket.off("utilisateur_frappe", handleTyping);
       socket.off("messages_lus", handleMessagesRead);
-      typingClearTimers.current.forEach((t) => clearTimeout(t));
-      typingClearTimers.current.clear();
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
     };
   }, [socket, convId, userId, addMessage, setTypingUser, clearTypingUser, markMessagesRead]);
 

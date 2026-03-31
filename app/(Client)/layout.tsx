@@ -4,6 +4,7 @@ import Sidebar from "@/src/components/personnal/sidebar";
 import BottomBar from "@/src/components/personnal/bottomBar";
 import { SocketProvider } from "@/src/components/providers/socketProvider";
 import AuthGuard from "@/src/components/providers/authGuard";
+import RightBar from "@/src/components/personnal/rightBar";
 
 export default function RootLayout({
   children,
@@ -21,7 +22,7 @@ export default function RootLayout({
           <div className="flex flex-row gap-4 h-full w-full pt-17">
             <Sidebar />
             <div className="xl:max-w-2xl w-full px-3 lg:px-0">{children}</div>
-            {/* <RightBar /> */}
+            <RightBar />
           </div>
         </div>
         <BottomBar />

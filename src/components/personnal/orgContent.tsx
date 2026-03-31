@@ -20,6 +20,8 @@ import {
   DrawerTrigger,
 } from "../ui/drawer";
 import { Button } from "../ui/button";
+import AnnouncementSection from "./ui/announcementSection";
+import CreateAnnouncementDialog from "./ui/createAnnouncementDialog";
 
 async function PostsSection({
   orgId,
@@ -46,6 +48,8 @@ async function PostsSection({
 
 const OrgContent = ({ org }: { org: DetailedOrganizationResponse | null }) => {
   const isMember = !!org?.currentUserRole;
+  const isAdmin =
+    org?.currentUserRole === "owner" || org?.currentUserRole === "admin";
 
   return (
     <div className="xl:max-w-2xl xl:w-2xl pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:p-0">
@@ -98,7 +102,10 @@ const OrgContent = ({ org }: { org: DetailedOrganizationResponse | null }) => {
                 </div>
               </div>
             </div>
-            <div className="pr-5">
+            <div className="pr-5 flex items-center gap-2">
+              {isAdmin && org?.id && (
+                <CreateAnnouncementDialog orgId={org.id} />
+              )}
               {isMember && (
                 <Drawer direction="right">
                   <DrawerTrigger asChild>
@@ -136,6 +143,15 @@ const OrgContent = ({ org }: { org: DetailedOrganizationResponse | null }) => {
       {/* Add Post — only for members */}
       {isMember && (
         <AddPostCard isgroup={true} orgId={org?.id} orgName={org?.name} />
+      )}
+
+      {/* Annonces officielles */}
+      {isMember && org?.id && (
+        <AnnouncementSection
+          orgId={org.id}
+          userRole={org.currentUserRole}
+          isAdmin={isAdmin}
+        />
       )}
 
       {/* Socket listener pour les demandes d'adhésion (admins) */}

@@ -32,7 +32,6 @@ const NewOrgFeed = ({
   initialHasMore,
   roomType,
   roomId,
-  roomName,
 }: NewFeedProps) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<FeedFilter>("for-you");

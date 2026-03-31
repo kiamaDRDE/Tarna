@@ -1,46 +1,11 @@
-import { Users, UserPlus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Button } from "../ui/button";
-import { groupsData } from "@/src/data/groups";
-import Link from "next/link";
-
-/* ─── Suggestions de personnes ─── */
-const suggestedPeople = [
-  {
-    id: 1,
-    name: "Sophie Ndong",
-    role: "Product Designer",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80",
-    initials: "SN",
-  },
-  {
-    id: 2,
-    name: "Alain Kamga",
-    role: "Backend Developer",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80",
-    initials: "AK",
-  },
-  {
-    id: 3,
-    name: "Fatou Diallo",
-    role: "Data Analyst",
-    avatar:
-      "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&q=80",
-    initials: "FD",
-  },
-];
-
-/* ─── Groupes suggérés (non membre, non pending) ─── */
-const suggestedGroups = groupsData
-  .filter((g) => !g.isMember && !g.isPending)
-  .slice(0, 3);
+import AnnouncementRightBarWidget from "./ui/announcementRightBarWidget";
 
 const RightBar = () => {
   return (
     <div className="w-75 pl-2 h-full hidden xl:flex flex-col gap-3 overflow-y-auto hide-scrollbar py-1 pr-1">
+      {/* ─── Annonces officielles ─── */}
+      <AnnouncementRightBarWidget />
+
       {/* ─── Tendances ─── */}
       {/* <Card className="gap-0 py-3 px-0 border shadow-none">
         <CardHeader className="px-4 pb-2 pt-0">
@@ -71,7 +36,7 @@ const RightBar = () => {
       </Card> */}
 
       {/* ─── Suggestions de personnes ─── */}
-      <Card className="gap-0 py-3 px-0 border shadow-none">
+      {/* <Card className="gap-0 py-3 px-0 border shadow-none">
         <CardHeader className="px-4 pb-2 pt-0">
           <div className="flex flex-row items-center gap-2">
             <UserPlus className="size-4 text-primary" />
@@ -110,10 +75,10 @@ const RightBar = () => {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* ─── Groupes suggérés ─── */}
-      <Card className="gap-0 py-3 px-0 border shadow-none">
+      {/* <Card className="gap-0 py-3 px-0 border shadow-none">
         <CardHeader className="px-4 pb-2 pt-0">
           <div className="flex flex-row items-center justify-between">
             <div className="flex flex-row items-center gap-2">
@@ -164,7 +129,7 @@ const RightBar = () => {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* ─── Footer ─── */}
       <div className="px-3 pb-4 pt-1">
