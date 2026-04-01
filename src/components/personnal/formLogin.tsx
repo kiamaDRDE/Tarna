@@ -56,6 +56,7 @@ export default function LoginForm({
   useEffect(() => {
     if (state.success && state.user && state.accessToken && state.refreshToken) {
       const u = state.user;
+      
       setUser(
         {
           id: u.id,
