@@ -39,6 +39,13 @@ export type UpdateProfileResult = {
 	userPatch?: Partial<User>;
 };
 
+export type UploadProfileImageInput = {
+	userId: string;
+	token: string | null;
+	field: "avatar" | "cover";
+	file: File;
+};
+
 export type DeleteProfileInput = {
 	userId: string;
 	token: string | null;
@@ -195,6 +202,88 @@ export async function updateProfileAction(
 		return {
 			success: false,
 			error: "Erreur réseau. Impossible de modifier le profil.",
+		};
+	}
+}
+
+export async function uploadProfileImageAction(
+	input: UploadProfileImageInput,
+): Promise<UpdateProfileResult> {
+	let token = input.token;
+	if (!token) {
+		const cookieStore = await cookies();
+		token = cookieStore.get("access_token")?.value ?? null;
+	}
+
+	if (!token) {
+		return { success: false, error: "Utilisateur non authentifié." };
+	}
+
+	const formData = new FormData();
+	formData.append(input.field, input.file);
+
+	try {
+		const res = await fetch(`${API_BASE_URL}/users/${input.userId}`, {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			body: formData,
+			cache: "no-store",
+		});
+
+		const responseJson = await res.json().catch(() => null);
+
+		if (!res.ok) {
+			return {
+				success: false,
+				error: getErrorMessage(responseJson, "Impossible d'uploader l'image."),
+			};
+		}
+
+		const updated = responseJson as {
+			id?: string;
+			username?: string;
+			displayName?: string | null;
+			phone?: string | null;
+			bio?: string | null;
+			avatarUrl?: string | null;
+			coverUrl?: string | null;
+			isVerified?: boolean;
+			role?: string;
+			status?: string;
+			createdAt?: string;
+		};
+
+		const profilePatch = {
+			id: updated.id,
+			username: updated.username,
+			displayName: updated.displayName ?? null,
+			phone: updated.phone ?? null,
+			bio: updated.bio ?? null,
+			avatarUrl: updated.avatarUrl ?? null,
+			coverUrl: updated.coverUrl ?? null,
+			isVerified: updated.isVerified,
+			role: updated.role,
+			status: updated.status,
+			createdAt: updated.createdAt,
+		};
+
+		const userPatch: Partial<User> = {
+			avatarUrl: profilePatch.avatarUrl,
+			coverUrl: profilePatch.coverUrl,
+		};
+
+		return {
+			success: true,
+			error: null,
+			profilePatch,
+			userPatch,
+		};
+	} catch {
+		return {
+			success: false,
+			error: "Erreur réseau. Impossible d'uploader l'image.",
 		};
 	}
 }
