@@ -41,7 +41,6 @@ import {
   Building2,
   Plus,
   Search,
-  Users,
   Compass,
   Clock,
   Globe,
@@ -251,11 +250,6 @@ const OrganizationsPage = () => {
         o.country.toLowerCase().includes(q),
     );
   }, [activeTab, search, myOrgs, discoverOrgs, pendingOrgs]);
-
-  const totalMembers = useMemo(
-    () => myOrgs.reduce((sum, o) => sum + o._count.memberships, 0),
-    [myOrgs],
-  );
 
   // ── Handlers ──────────────────────────────────────────────
 

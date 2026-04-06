@@ -74,9 +74,9 @@ const AddPostCard = ({
     isgroup ? "group_only" : "public",
   );
   const [imagePreview, setImagePreview] = useState<string[] | null>(null);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [docFiles, setDocFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const currentUser = useUserStore((state) => state.user);
@@ -169,6 +169,13 @@ const AddPostCard = ({
     prevState: CreatePostState,
     formData: FormData,
   ) => {
+    // Replace the native file input (which only holds the last selection)
+    // with all state-managed document files
+    formData.delete("files");
+    for (const file of docFiles) {
+      formData.append("files", file, file.name);
+    }
+
     const result = await createPostAction(
       prevState,
       formData,
@@ -181,10 +188,10 @@ const AddPostCard = ({
       if (result.post) addPost(result.post);
       setContent("");
       setImagePreview(null);
-      setPdfFile(null);
+      setDocFiles([]);
       setIsFocused(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      if (pdfInputRef.current) pdfInputRef.current.value = "";
+      if (docInputRef.current) docInputRef.current.value = "";
       toast.success("Post publié", {
         description: "Votre publication est en ligne.",
       });
@@ -219,8 +226,10 @@ const AddPostCard = ({
   };
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setPdfFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setDocFiles((prev) => [...prev, ...Array.from(files)]);
+    }
   };
 
   const removeImage = () => {
@@ -228,16 +237,16 @@ const AddPostCard = ({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removePdf = () => {
-    setPdfFile(null);
-    if (pdfInputRef.current) pdfInputRef.current.value = "";
+  const removeDoc = (index: number) => {
+    setDocFiles((prev) => prev.filter((_, i) => i !== index));
+    if (docInputRef.current) docInputRef.current.value = "";
   };
 
-  const hasContent = content.trim().length > 0 || imagePreview || pdfFile;
+  const hasContent = content.trim().length > 0 || imagePreview || docFiles.length > 0;
 
   const handleMediaAction = (id: number) => {
     if (id === 0) fileInputRef.current?.click();
-    else if (id === 2) pdfInputRef.current?.click();
+    else if (id === 2) docInputRef.current?.click();
   };
 
   const mediaActions: MediaAction[] = [
@@ -275,8 +284,8 @@ const AddPostCard = ({
         <input
           type="file"
           name="files"
-          ref={pdfInputRef}
-          accept="application/pdf"
+          ref={docInputRef}
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.txt,.csv"
           className="hidden"
           onChange={handlePdfChange}
           multiple
@@ -309,7 +318,7 @@ const AddPostCard = ({
         </div>
 
         {/* ─── Previews ─── */}
-        {(imagePreview || pdfFile) && (
+        {(imagePreview || docFiles.length > 0) && (
           <div className="flex flex-col gap-3">
             {/* Images */}
             {imagePreview && imagePreview.length > 0 && (
@@ -362,18 +371,36 @@ const AddPostCard = ({
               </div>
             )}
 
-            {/* PDF */}
-            {pdfFile && (
-              <div className="flex flex-row items-center gap-2 bg-accent rounded-lg px-3 py-2 w-fit">
-                <FileText className="size-4 text-red-500 shrink-0" />
-                <p className="text-xs truncate max-w-32">{pdfFile.name}</p>
-                <button
-                  type="button"
-                  onClick={removePdf}
-                  className="bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70 cursor-pointer"
-                >
-                  <X className="size-3" />
-                </button>
+            {/* Documents */}
+            {docFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {docFiles.map((file, idx) => {
+                  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+                  const color =
+                    ext === "pdf"
+                      ? "text-red-500"
+                      : ext === "doc" || ext === "docx"
+                        ? "text-blue-600"
+                        : ext === "xls" || ext === "xlsx" || ext === "csv"
+                          ? "text-green-600"
+                          : "text-orange-500";
+                  return (
+                    <div
+                      key={idx}
+                      className="flex flex-row items-center gap-2 bg-accent rounded-lg px-3 py-2"
+                    >
+                      <FileText className={`size-4 ${color} shrink-0`} />
+                      <p className="text-xs truncate max-w-32">{file.name}</p>
+                      <button
+                        type="button"
+                        onClick={() => removeDoc(idx)}
+                        className="bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70 cursor-pointer"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

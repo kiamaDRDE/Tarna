@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useSocket } from "@/src/components/providers/socketProvider";
 import { useUserStore } from "@/src/store/userStore";
 import { useAdminPostStore, AdminPost } from "@/src/store/adminPostStore";
@@ -54,8 +55,6 @@ import {
   PenLine,
   Globe,
   Lock,
-  Heart,
-  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -541,11 +540,13 @@ export default function PostModerationPage() {
                   {selectedPost.images.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                       {selectedPost.images.map((url, i) => (
-                        <img
+                        <Image
                           key={i}
                           src={url}
                           alt={`Image ${i + 1}`}
-                          className="h-36 rounded-xl object-cover border shadow-sm shrink-0"
+                          width={144}
+                          height={144}
+                          className="h-36 w-auto rounded-xl object-cover border shadow-sm shrink-0"
                         />
                       ))}
                     </div>

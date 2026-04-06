@@ -602,74 +602,112 @@ const FeedItem = ({
           {/* Documents */}
           {post.files.length > 0 && (
             <div className="flex flex-col gap-2 mt-3">
-              {post.files.map((media, index) => (
-                <div
-                  key={index}
-                  className="flex flex-row items-center gap-3 px-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer justify-between"
-                  // AFFICHER LE PREVIOUS DU PDF DANS UNE MODAL
-
-                  //   media.fileExtension === "pdf" && setPreviewDoc(media)
-                  // }
-                >
+              {post.files.map((media, index) => {
+                const ext = media.extension?.toLowerCase();
+                const { bg, text } =
+                  ext === "pdf"
+                    ? { bg: "bg-red-500/10", text: "text-red-500" }
+                    : ext === "doc" || ext === "docx"
+                      ? { bg: "bg-blue-600/10", text: "text-blue-600" }
+                      : ext === "xls" || ext === "xlsx" || ext === "csv"
+                        ? { bg: "bg-green-600/10", text: "text-green-600" }
+                        : ext === "ppt" || ext === "pptx"
+                          ? { bg: "bg-orange-500/10", text: "text-orange-500" }
+                          : { bg: "bg-primary/10", text: "text-primary" };
+                return (
                   <div
-                    className="flex flex-row items-center gap-3 w-full py-2.5"
-                    onClick={() => setPreviewDoc(media)}
+                    key={index}
+                    className="flex flex-row items-center gap-3 px-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer justify-between"
                   >
                     <div
-                      className={`flex items-center justify-center size-9 rounded-lg ${media.extension === "pdf" ? "bg-red-500/10" : "bg-primary/10"} shrink-0`}
+                      className="flex flex-row items-center gap-3 w-full py-2.5"
+                      onClick={() => setPreviewDoc(media)}
                     >
-                      <FileText
-                        className={`size-4 ${media.extension === "pdf" ? "text-red-500" : "text-primary"}`}
-                      />
+                      <div
+                        className={`flex items-center justify-center size-9 rounded-lg ${bg} shrink-0`}
+                      >
+                        <FileText className={`size-4 ${text}`} />
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {media.fileName || "Document"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {media.extension?.toUpperCase()}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {media.fileName || "Document"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {media.extension?.toUpperCase()}
-                        {/* {media.fileSize &&
-                        ` · ${(media.fileSize / 1024).toFixed(0)} Ko`} */}
-                      </p>
-                    </div>
+                    <Button
+                      asChild
+                      variant={"outline"}
+                      onClick={() =>
+                        handleDownloadFile(media.url, media.fileName)
+                      }
+                    >
+                      <div>
+                        <ArrowDownToLine className="size-4" />
+                      </div>
+                    </Button>
                   </div>
-                  <Button
-                    asChild
-                    variant={"outline"}
-                    onClick={() =>
-                      handleDownloadFile(media.url, media.fileName)
-                    }
-                  >
-                    <div>
-                      <ArrowDownToLine className="size-4" />
-                    </div>
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
-          {/* PDF Preview Dialog */}
+          {/* Document Preview Dialog */}
           <Dialog
             open={!!previewDoc}
             onOpenChange={(open) => !open && setPreviewDoc(null)}
           >
             <DialogContent className="sm:max-w-4xl h-[85vh] flex flex-col p-0 gap-0">
-              <DialogHeader className="px-6 py-4 border-b shrink-0">
-                <DialogTitle className="flex items-center gap-2 text-base">
-                  <FileText className="size-4 text-primary" />
-                  {previewDoc?.fileName || "Document"}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="flex-1 min-h-0">
-                {previewDoc && (
-                  <iframe
-                    src={previewDoc.url}
-                    title={previewDoc.fileName || "PDF Preview"}
-                    className="w-full h-full border-0"
-                  />
-                )}
-              </div>
+              {(() => {
+                const ext = previewDoc?.extension?.toLowerCase() ?? "";
+                const isOffice = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext);
+                const isPdf = ext === "pdf";
+                const isText = ["txt", "csv"].includes(ext);
+
+                const iconColor =
+                  isPdf
+                    ? "text-red-500"
+                    : ext === "doc" || ext === "docx"
+                      ? "text-blue-600"
+                      : ext === "xls" || ext === "xlsx" || ext === "csv"
+                        ? "text-green-600"
+                        : ext === "ppt" || ext === "pptx"
+                          ? "text-orange-500"
+                          : "text-primary";
+
+                const previewUrl = previewDoc
+                  ? isPdf || isText
+                    ? previewDoc.url
+                    : isOffice
+                      ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewDoc.url)}`
+                      : `https://docs.google.com/gview?url=${encodeURIComponent(previewDoc.url)}&embedded=true`
+                  : "";
+
+                return (
+                  <>
+                    <DialogHeader className="px-6 py-4 border-b shrink-0">
+                      <DialogTitle className="flex items-center gap-2 text-base">
+                        <FileText className={`size-4 ${iconColor}`} />
+                        {previewDoc?.fileName || "Document"}
+                        <span className="text-xs text-muted-foreground font-normal ml-1">
+                          {ext.toUpperCase()}
+                        </span>
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="flex-1 min-h-0">
+                      {previewDoc && (
+                        <iframe
+                          src={previewUrl}
+                          title={previewDoc.fileName || "Document Preview"}
+                          className="w-full h-full border-0"
+                        />
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </DialogContent>
           </Dialog>
 

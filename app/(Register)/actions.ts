@@ -38,6 +38,8 @@ export type LoginState = {
   user?: LoginUser;
   accessToken?: string;
   refreshToken?: string;
+  accountDeleted?: boolean;
+  maskedEmail?: string;
 };
 
 // ---------- Signup action ----------
@@ -160,6 +162,17 @@ export async function loginAction(
 
     if (!res.ok) {
       const data = await res.json().catch(() => null);
+
+      // Compte supprimé — proposer la récupération
+      if (res.status === 403 && data?.code === "ACCOUNT_DELETED") {
+        return {
+          success: false,
+          errors: {},
+          accountDeleted: true,
+          maskedEmail: data.maskedEmail ?? "",
+        };
+      }
+
       return {
         success: false,
         errors: { identifier: data?.message ?? "Identifiants invalides." },
@@ -189,6 +202,46 @@ export async function loginAction(
     return {
       success: false,
       errors: { identifier: "Une erreur est survenue. Veuillez réessayer." },
+    };
+  }
+}
+
+// ---------- Recovery types ----------
+export type RecoveryState = {
+  success: boolean;
+  error?: string;
+  maskedEmail?: string;
+};
+
+// ---------- Request account recovery action ----------
+export async function requestRecoveryAction(
+  identifier: string,
+  password: string,
+): Promise<RecoveryState> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/request-recovery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: identifier.trim(), password }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (res.ok) {
+      return {
+        success: true,
+        maskedEmail: data?.maskedEmail ?? "",
+      };
+    }
+
+    return {
+      success: false,
+      error: data?.message ?? "Une erreur est survenue.",
+    };
+  } catch {
+    return {
+      success: false,
+      error: "Impossible de contacter le serveur.",
     };
   }
 }

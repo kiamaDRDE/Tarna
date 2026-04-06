@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -10,6 +10,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import {
+  Camera,
   Check,
   FileText,
   Loader2,
@@ -51,6 +52,7 @@ import {
   changePasswordAction,
   deleteProfileAction,
   updateProfileAction,
+  uploadProfileImageAction,
 } from "../action";
 
 interface UserProfile extends User {
@@ -98,6 +100,10 @@ const ProfilePage = () => {
     phone: "",
     bio: "",
   });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   //   const [isFollowing, setIsFollowing] = useState(false);
   //   const [followLoading, setFollowLoading] = useState(false);
 
@@ -112,6 +118,64 @@ const ProfilePage = () => {
     setPasswordErrors({});
     setConfirmPassword(true);
   }, []);
+
+  const handleImageUpload = useCallback(
+    async (field: "avatar" | "cover", file: File) => {
+      if (!profile?.id) return;
+      const setUploading =
+        field === "avatar" ? setAvatarUploading : setCoverUploading;
+      setUploading(true);
+      try {
+        const result = await uploadProfileImageAction({
+          userId: profile.id,
+          token: accessToken,
+          field,
+          file,
+        });
+        if (result.success) {
+          if (result.profilePatch) {
+            setProfile((prev) =>
+              prev ? { ...prev, ...result.profilePatch } : prev,
+            );
+          }
+          if (currentUser?.id === profile.id && result.userPatch) {
+            updateCurrentUser(result.userPatch);
+          }
+          toast.success(
+            field === "avatar"
+              ? "Photo de profil mise à jour"
+              : "Photo de couverture mise à jour",
+          );
+        } else {
+          toast.error(result.error || "Erreur lors de l'upload");
+        }
+      } catch {
+        toast.error("Erreur réseau");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [profile?.id, accessToken, currentUser?.id, updateCurrentUser],
+  );
+
+  const onFileSelected = useCallback(
+    (field: "avatar" | "cover") =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          toast.error("Seules les images sont autorisées");
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("L'image ne doit pas dépasser 5 Mo");
+          return;
+        }
+        handleImageUpload(field, file);
+        e.target.value = "";
+      },
+    [handleImageUpload],
+  );
 
   const passwordRules = [
     { key: "minLength", label: "Au moins 8 caractères", test: (v: string) => v.length >= 8 },
@@ -486,7 +550,7 @@ const ProfilePage = () => {
 
   return (
     <div className="xl:max-w-2xl xl:w-2xl w-full pb-20 h-full overflow-scroll hide-scrollbar md:px-10 xl:px-0">
-      <div className="relative h-52 md:h-64 rounded-2xl overflow-hidden border bg-linear-to-br from-primary/20 via-primary/5 to-background">
+      <div className="relative h-52 md:h-64 rounded-2xl overflow-hidden border bg-linear-to-br from-primary/20 via-primary/5 to-background group">
         {profile?.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -496,33 +560,80 @@ const ProfilePage = () => {
           />
         )}
         <div className="absolute inset-0 bg-linear-to-t from-primary/40 via-primary/10 to-transparent" />
-        {/* <div className="absolute top-4 right-4">
-          <div className="flex items-center gap-1.5 rounded-full bg-background/85 backdrop-blur px-3 py-1 text-xs font-medium border">
-            <Sparkles className="size-3.5 text-primary" />
-            Profil public
-          </div>
-        </div> */}
+
+        {/* Cover edit button */}
+        {currentUser?.username === username && (
+          <>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onFileSelected("cover")}
+            />
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={coverUploading}
+              className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-background/85 backdrop-blur px-3 py-1.5 text-xs font-medium border shadow-sm cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+            >
+              {coverUploading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Camera className="size-3.5" />
+              )}
+              Modifier la couverture
+            </button>
+          </>
+        )}
       </div>
 
       <Card className="relative -mt-14 md:-mt-16 mx-3 md:mx-4 p-5 md:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-start gap-5">
-          <Avatar className="size-24 md:size-28 border-4 border-background shadow-sm -mt-16 md:-mt-20 shrink-0">
-            <AvatarImage
-              src={profile?.avatarUrl ?? ""}
-              alt={profile?.displayName ?? profile?.username}
-            />
-            <AvatarFallback
-              className={`text-2xl font-bold ${getAvatarFallbackColor(
-                getInitials(
+          {/* Avatar with edit overlay */}
+          <div className="relative shrink-0 -mt-16 md:-mt-20 group/avatar">
+            <Avatar className="size-24 md:size-28 border-4 border-background shadow-sm">
+              <AvatarImage
+                src={profile?.avatarUrl ?? ""}
+                alt={profile?.displayName ?? profile?.username}
+              />
+              <AvatarFallback
+                className={`text-2xl font-bold ${getAvatarFallbackColor(
+                  getInitials(
+                    profile?.displayName || profile?.username || "User Name",
+                  ),
+                )}`}
+              >
+                {getInitials(
                   profile?.displayName || profile?.username || "User Name",
-                ),
-              )}`}
-            >
-              {getInitials(
-                profile?.displayName || profile?.username || "User Name",
-              )}
-            </AvatarFallback>
-          </Avatar>
+                )}
+              </AvatarFallback>
+            </Avatar>
+
+            {currentUser?.username === username && (
+              <>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onFileSelected("avatar")}
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {avatarUploading ? (
+                    <Loader2 className="size-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="size-5 text-white" />
+                  )}
+                </button>
+              </>
+            )}
+          </div>
 
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

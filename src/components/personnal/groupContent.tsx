@@ -19,6 +19,7 @@ import {
 } from "../ui/drawer";
 import { Button } from "../ui/button";
 import GroupChatButton from "./groupChatButton";
+import AnnouncementSection from "./ui/announcementSection";
 
 const visibilityConfig: Record<
   string,
@@ -148,6 +149,19 @@ const GroupContent = ({
           isgroup={true}
           groupId={group?.id}
           groupName={group?.name}
+        />
+      )}
+
+      {/* Annonces ciblant ce groupe */}
+      {isMember && group?.orgId && group?.id && (
+        <AnnouncementSection
+          orgId={group.orgId}
+          groupId={group.id}
+          userRole={group.currentUserRole ?? null}
+          isAdmin={
+            group.currentUserRole === "owner" ||
+            group.currentUserRole === "admin"
+          }
         />
       )}
 

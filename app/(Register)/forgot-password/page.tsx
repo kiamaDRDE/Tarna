@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
 function ForgotPasswordContent() {
   const [email, setEmail] = useState("");
